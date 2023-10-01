@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 require("express-async-errors");
+const cors = require("cors");
 const http = require("http");
 const Connection = require("./conn/conn");
 const { dbConfig } = require("./conn/configs");
@@ -8,8 +9,19 @@ const RegisterRoute = require("./routes/registerroute");
 const CreateTable = require("./routes/helperroutes/createtable");
 const VerifyRoute = require("./routes/verifyroute");
 const RegenerateRoute = require("./routes/regenerateroute");
+const notFound = require("./errorHandler/notfound");
+const errorHandler = require("./errorHandler/errorHandler");
+const { logger } = require("./middlewares/logs");
+const corsOptions = require("./conn/corsOptions");
+const credentials = require("./middlewares/credential");
+const ResetPassword = require("./routes/resetpasswordroute");
+const { RequesteLimiter } = require("./middlewares/ratelimiter");
 const app = express();
 const Server = http.createServer(app);
+
+app.use(logger);
+app.use(credentials);
+app.use(cors(corsOptions));
 
 const database = new Connection(dbConfig);
 const base_url = process.env.BASE_API;
@@ -35,13 +47,18 @@ app.use(`${base_url}/register`, RegisterRoute);
 app.use(`${base_url}/admin`, CreateTable);
 app.use(`${base_url}/verify`, VerifyRoute);
 app.use(`${base_url}/regenerate`, RegenerateRoute);
+app.use(`${base_url}/resetpassword`, ResetPassword);
 
 // error middleware
 app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message });
 });
 
+const limiter = RequesteLimiter(2);
+app.use(limiter, notFound);
 const port = process.env.PORT || 3500;
+
+app.use(errorHandler);
 Server.listen(port, async () => {
   try {
     await database.connectDB();
