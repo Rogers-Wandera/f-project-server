@@ -10,6 +10,14 @@ const RequesteLimiter = (
     standardHeaders: "draft-7",
     message: message,
     legacyHeaders: false,
+    handler: (req, res, next) => {
+      res.status(429).json({
+        errors: [
+          { field: "error", message: "Rate limit Exceeded" },
+          { field: "message", message: message },
+        ],
+      });
+    },
   });
 };
 

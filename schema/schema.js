@@ -142,6 +142,30 @@ const resetPasswordLinkSchema = joi.object({
   }),
 });
 
+const resetUserPasswordSchema = joi.object({
+  password: joi
+    .string()
+    .pattern(new RegExp(/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[a-zA-Z\d]).{6,}$/))
+    .required()
+    .messages({
+      "string.empty": "Password is required",
+      "any.required": "Password is required",
+      "string.pattern.base":
+        "Password must be at least 6 characters long containing at least one letter and one number",
+    }),
+  confirmpassword: joi.valid(joi.ref("password")).required().messages({
+    "any.only": "Passwords must match",
+    "any.required": "Password confirmation is required",
+  }),
+});
+
+const resetUserPasswordParamsSchema = joi.object({
+  userId: joi.string().required().messages({
+    "string.empty": "User id is required",
+    "any.required": "User id is required",
+  }),
+});
+
 module.exports = {
   RegistrationSchema,
   createTableSchema,
@@ -150,4 +174,6 @@ module.exports = {
   resetPasswordSchema,
   loginSchema,
   resetPasswordLinkSchema,
+  resetUserPasswordParamsSchema,
+  resetUserPasswordSchema,
 };
