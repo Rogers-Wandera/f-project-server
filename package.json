@@ -24,6 +24,7 @@
     "joi": "^17.10.2",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.6.1",
+    "node-cron": "^3.0.2",
     "nodemailer": "^6.9.5",
     "retry": "^0.13.1",
     "socket.io": "^4.7.2",

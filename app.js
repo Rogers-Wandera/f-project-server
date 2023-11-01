@@ -17,6 +17,7 @@ const credentials = require("./middlewares/credential");
 const ResetPassword = require("./routes/auth/resetpasswordroute");
 const { RequesteLimiter } = require("./middlewares/ratelimiter");
 const LoginRoute = require("./routes/auth/loginroute");
+const cronjob = require("node-cron");
 const app = express();
 const Server = http.createServer(app);
 
@@ -66,6 +67,12 @@ Server.listen(port, async () => {
     await database.connectDB();
     console.log(`Server running on port ${port}`);
     await database.disconnectDb();
+    const midnightCrons = () => {
+      cronjob.schedule("0 0 * * *", async () => {
+        await database.DeleteRecycleBinData();
+      });
+    };
+    midnightCrons();
   } catch (error) {
     console.log(error);
   }

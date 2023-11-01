@@ -1,9 +1,20 @@
 const mysql = require("mysql2/promise");
+const { format, differenceInDays } = require("date-fns");
 
 class Connection {
   constructor(config) {
     this.pool = mysql.createPool(config);
     this.connection = null;
+  }
+
+  async startTransaction() {
+    try {
+      if (this.connection) {
+        await this.connection.beginTransaction();
+      }
+    } catch (error) {
+      throw new Error("Error starting transaction: " + error.message);
+    }
   }
   async connectDB() {
     try {
@@ -31,6 +42,16 @@ class Connection {
       return rows;
     } catch (error) {
       throw new Error("method-> executeQuery: " + error.message);
+    }
+  }
+
+  async countRecords(table) {
+    try {
+      const query = `SELECT COUNT(*) AS count FROM ??`;
+      const [rows] = await this.executeQuery(query, [table]);
+      return rows;
+    } catch (error) {
+      throw new Error("method-> countRecords: " + error.message);
     }
   }
 
@@ -155,14 +176,33 @@ class Connection {
     }
   }
 
+  async saveRecycleBin(original_table, original_record_id) {
+    try {
+      if (!this.connection) {
+        throw new Error("Connection not established");
+      }
+      const data = {
+        original_table_name: original_table,
+        original_record_id: original_record_id,
+        deleted_at: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+        isActive: 1,
+      };
+      const results = await this.insertOne("recyclebin", data);
+      return results;
+    } catch (error) {
+      throw new Error("method-> saveRecycleBin: " + error.message);
+    }
+  }
+
   async deleteOne(table, id) {
     try {
-      const exists = this.findOne(table, id);
+      const exists = await this.findOne(table, id);
       if (!exists) {
         throw new Error("No record found");
       }
       const query = `DELETE FROM ?? WHERE id = ?`;
-      const results = await this.executeQuery(query, [table, id]);
+      const results = await this.executeQuery(query, [table, exists.id]);
+      await this.deleteRecycleData(table, exists.id);
       if (results.affectedRows === 1) {
         return true;
       } else {
@@ -170,6 +210,67 @@ class Connection {
       }
     } catch (error) {
       throw new Error("method-> deleteOne: " + error.message);
+    }
+  }
+
+  async softDelete(table, id) {
+    try {
+      const exists = await this.findOne(table, id);
+      if (!exists) {
+        throw new Error("No record found");
+      }
+      // const query = `DELETE FROM ?? WHERE id = ?`;
+      const query = `UPDATE ?? SET deleted_at = ? WHERE id = ?`;
+      const results = await this.executeQuery(query, [
+        table,
+        format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+        exists.id,
+      ]);
+      await this.saveRecycleBin(table, exists.id);
+      if (results.affectedRows === 1) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      throw new Error("method-> softDelete: " + error.message);
+    }
+  }
+
+  async restoreDelete(table, id) {
+    try {
+      if (!this.connection) {
+        throw new Error("Connection not established");
+      }
+      await this.updateOne(table, id, { deleted_at: null });
+      const findData = await this.findByConditions("recyclebin", {
+        original_table_name: table,
+        original_record_id: id,
+      });
+      if (findData.length > 0) {
+        const sql = "DELETE FROM recyclebin WHERE id = ?";
+        await this.connection.query(sql, [findData[0].id]);
+      }
+    } catch (error) {
+      throw new Error("method-> restoreDelete: " + error.message);
+    }
+  }
+
+  async deleteRecycleData(table, id) {
+    try {
+      if (!this.connection) {
+        throw new Error("Connection not established");
+      }
+      const findData = await this.findByConditions("recyclebin", {
+        original_table_name: table,
+        original_record_id: id,
+      });
+      if (findData.length > 0) {
+        const sql = "DELETE FROM recyclebin WHERE id = ?";
+        await this.connection.query(sql, [findData[0].id]);
+      }
+    } catch (error) {
+      throw new Error("method-> deleteRecycleData: " + error.message);
     }
   }
 
@@ -243,6 +344,226 @@ class Connection {
       return results;
     } catch (error) {
       throw new Error("method-> findByConditions: " + error.message);
+    }
+  }
+
+  async findPaginate(
+    table,
+    limit = 10,
+    page = 1,
+    sortBy = null,
+    sortOrder = null,
+    conditions = null
+  ) {
+    try {
+      if (!this.connection) {
+        throw new Error("Connection not established");
+      }
+      if (!table) {
+        throw new Error("Table is required");
+      }
+
+      let sql = `SELECT *FROM ?? `;
+      const queryvalues = [table];
+
+      if (conditions && Object.keys(conditions).length > 0) {
+        // constructing a where clause
+        const whereClause = Object.keys(conditions)
+          .map((column) => `${column} = ?`)
+          .join(" AND ");
+        sql += `WHERE ${whereClause}`;
+        // constructing the values
+        const values = Object.values(conditions);
+        queryvalues.push(...values);
+      }
+
+      if (sortBy && sortOrder) {
+        const order = sortOrder.toLowerCase() === "desc" ? "DESC" : "ASC";
+        sql += ` ORDER BY ?? ${order}`;
+        queryvalues.push(sortBy);
+      }
+
+      if (limit) {
+        sql += " LIMIT ?";
+        queryvalues.push(limit);
+      }
+      const offsetval = (page - 1) * limit;
+      sql += " OFFSET ?";
+      queryvalues.push(offsetval);
+      const count = await this.countRecords(table);
+      const totalPages = Math.ceil(count.count / limit);
+      const [results] = await this.connection.query(sql, queryvalues);
+
+      const resultSet = {
+        docs: [],
+        totalDocs: 0,
+        totalPages: 0,
+        page: 0,
+      };
+      if (results.length > 0) {
+        resultSet.docs = results;
+        resultSet.totalDocs = count.count;
+        resultSet.totalPages = totalPages;
+        resultSet.page = page;
+      }
+      return resultSet;
+    } catch (error) {
+      throw new Error("method-> findPaginate: " + error.message);
+    }
+  }
+
+  async performJoin(
+    mainTable,
+    jointable,
+    limit = 10,
+    page = 1,
+    sortBy = null,
+    sortOrder = null,
+    conditions = null
+  ) {
+    try {
+      // expected format
+      // "tokens",
+      //   [
+      //     {
+      //       table: "roles",
+      //       alias: "rs",
+      //       condition: "rs.userId = us.id",
+      //       join: "LEFT",
+      //       columns: ["rs.role"],
+      //     },
+      //   ];
+      if (!this.connection) {
+        throw new Error("Connection not established");
+      }
+      if (!mainTable || !jointable) {
+        throw new Error("Main join Table, jointables are required");
+      }
+      if (!Array.isArray(jointable)) {
+        throw new Error("jointable must be an array");
+      }
+
+      let sql = "SELECT mt.*";
+      const queryvalues = [mainTable];
+      for (let i = 0; i < jointable.length; i++) {
+        if (jointable[i].columns) {
+          for (let x = 0; x < jointable[i].columns.length; x++) {
+            sql += `, ${jointable[i].columns[x]}`;
+          }
+        }
+      }
+      sql += " FROM ?? as mt";
+      for (let i = 0; i < jointable.length; i++) {
+        sql += ` ${jointable[i].join} JOIN ?? AS ${jointable[i].alias} ON ${jointable[i].condition}`;
+        queryvalues.push(jointable[i].table);
+      }
+
+      if (conditions && Object.keys(conditions).length > 0) {
+        // constructing a where clause
+        const whereClause = Object.keys(conditions)
+          .map((column) => `${column} = ?`)
+          .join(" AND ");
+        sql += `WHERE ${whereClause}`;
+        // constructing the values
+        const values = Object.values(conditions);
+        queryvalues.push(...values);
+      }
+
+      if (sortBy && sortOrder) {
+        const order = sortOrder.toLowerCase() === "desc" ? "DESC" : "ASC";
+        sql += ` ORDER BY ?? ${order}`;
+        queryvalues.push(sortBy);
+      }
+
+      if (limit) {
+        sql += " LIMIT ?";
+        queryvalues.push(limit);
+      }
+      const offsetval = (page - 1) * limit;
+      sql += " OFFSET ?";
+      queryvalues.push(offsetval);
+
+      console.log(sql);
+      const count = await this.countRecords(mainTable);
+      const totalPages = Math.ceil(count.count / limit);
+      const [results] = await this.connection.query(sql, queryvalues);
+
+      const resultSet = {
+        docs: [],
+        totalDocs: 0,
+        totalPages: 0,
+        page: 0,
+      };
+      if (results.length > 0) {
+        resultSet.docs = results;
+        resultSet.totalDocs = count.count;
+        resultSet.totalPages = totalPages;
+        resultSet.page = page;
+      }
+      return resultSet;
+    } catch (error) {
+      throw new Error("method-> performJoin: " + error.message);
+    }
+  }
+
+  async getAllTables() {
+    try {
+      if (!this.connection) {
+        throw new Error("Connection not established");
+      }
+      const [results] = await this.connection.query("SHOW TABLES");
+      const tables = results.map(
+        (table) => table[`Tables_in_${process.env.DB_NAME}`]
+      );
+      return tables;
+    } catch (error) {
+      throw new Error("method-> getAllTables: " + error.message);
+    }
+  }
+
+  async DeleteRecycleBinData() {
+    try {
+      if (!this.connection) {
+        throw new Error("Connection not established");
+      }
+      const date = new Date();
+      const data = await this.findAll("recyclebin");
+      const outdated = data.filter((item) => {
+        const deletedAt = new Date(item.deleted_at);
+        const daysSinceDeletion = differenceInDays(date, deletedAt);
+        const outdatedThreshhold = 30;
+        item.daysSinceDeletion = daysSinceDeletion;
+        return daysSinceDeletion > outdatedThreshhold;
+      });
+      let tables = [];
+      let records = 0;
+      if (outdated.length > 0) {
+        await this.deleteMany(
+          "recyclebin",
+          outdated.map((item) => item.id)
+        );
+
+        for (let i = 0; i < outdated.length; i++) {
+          await this.deleteOne(outdated[i].original_table_name, {
+            id: outdated[i].original_record_id,
+          });
+        }
+
+        tables = outdated.map((item) => item.original_table_name);
+        records = outdated.length;
+      }
+      if (records > 0) {
+        await this.insertOne("schedulerrun", {
+          original_table_name: "recyclebin",
+          records_affected: records,
+          action: "deletion",
+          isActive: 1,
+          daterun: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+        });
+      }
+      return { tables, records, action: "deletion" };
+    } catch (error) {
+      throw new Error("method->RecycleBinData: " + error.message);
     }
   }
 }
