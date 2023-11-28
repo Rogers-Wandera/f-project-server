@@ -20,18 +20,21 @@ const LoginRoute = require("./routes/auth/loginroute");
 const cronjob = require("node-cron");
 const app = express();
 const Server = http.createServer(app);
+const FileUploader = require("./conn/uploader");
 
 app.use(logger);
 app.use(credentials);
 app.use(cors(corsOptions));
 
 const database = new Connection(dbConfig);
+const fileupload = new FileUploader();
 const base_url = process.env.BASE_API;
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {
   req.db = database;
+  req.upload = fileupload;
   next();
 });
 app.use((req, res, next) => {
@@ -55,6 +58,17 @@ app.use(`${base_url}/login`, LoginRoute);
 // error middleware
 app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message });
+});
+
+app.post(`${base_url}/upload`, async (req, res) => {
+  try {
+    fileupload.filename = "image";
+    const response = await fileupload.handleFileUpload(req, res);
+    const resp = await fileupload.multipleUploadCloudinary(response);
+    res.status(200).json({ resp });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
 const limiter = RequesteLimiter(2);

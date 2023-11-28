@@ -6,4 +6,10 @@ const dbConfig = {
   port: process.env.DB_PORT,
 };
 
-module.exports = { dbConfig };
+const cloudinaryConfig = {
+  cloudname: process.env.CLOUD_NAME,
+  apikey: process.env.CLOUD_API_KEY,
+  apisecret: process.env.CLOUD_API_SECRET,
+};
+
+module.exports = { dbConfig, cloudinaryConfig };
