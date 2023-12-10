@@ -21,6 +21,7 @@ const cronjob = require("node-cron");
 const app = express();
 const Server = http.createServer(app);
 const FileUploader = require("./conn/uploader");
+const PersonRoute = require("./routes/personroutes/createPerson");
 
 app.use(logger);
 app.use(credentials);
@@ -54,6 +55,7 @@ app.use(`${base_url}/verify`, VerifyRoute);
 app.use(`${base_url}/regenerate`, RegenerateRoute);
 app.use(`${base_url}/resetpassword`, ResetPassword);
 app.use(`${base_url}/login`, LoginRoute);
+app.use(`${base_url}/person`, PersonRoute);
 
 // error middleware
 app.use((err, req, res, next) => {

@@ -68,7 +68,7 @@ class Connection {
           return `${column.name} ${column.type}`;
         })
         .join(", ");
-      const sql = `CREATE TABLE ?? (${columnDefinitions})`;
+      const sql = `CREATE TABLE ?? (${columnDefinitions},deleted_at datetime null, createdAt datetime not null)`;
       const [results] = await this.connection.query(sql, [table]);
       if (
         results.warningStatus === 0 ||
@@ -220,7 +220,7 @@ class Connection {
         throw new Error("No record found");
       }
       // const query = `DELETE FROM ?? WHERE id = ?`;
-      const query = `UPDATE ?? SET deleted_at = ? WHERE id = ?`;
+      const query = `UPDATE ?? SET deleted_at = ?, isActive = 0 WHERE id = ?`;
       const results = await this.executeQuery(query, [
         table,
         format(new Date(), "yyyy-MM-dd HH:mm:ss"),
@@ -242,7 +242,7 @@ class Connection {
       if (!this.connection) {
         throw new Error("Connection not established");
       }
-      await this.updateOne(table, id, { deleted_at: null });
+      await this.updateOne(table, id, { deleted_at: null, isActive: 1 });
       const findData = await this.findByConditions("recyclebin", {
         original_table_name: table,
         original_record_id: id,
@@ -415,11 +415,11 @@ class Connection {
   async performJoin(
     mainTable,
     jointable,
-    limit = 10,
-    page = 1,
+    conditions = null,
     sortBy = null,
     sortOrder = null,
-    conditions = null
+    limit = 10,
+    page = 1
   ) {
     try {
       // expected format
@@ -463,7 +463,7 @@ class Connection {
         const whereClause = Object.keys(conditions)
           .map((column) => `${column} = ?`)
           .join(" AND ");
-        sql += `WHERE ${whereClause}`;
+        sql += ` WHERE ${whereClause}`;
         // constructing the values
         const values = Object.values(conditions);
         queryvalues.push(...values);
