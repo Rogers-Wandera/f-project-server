@@ -1,29 +1,45 @@
 const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
-const ProgressBar = require("progress");
-const stream = require("stream");
+const path = require("path");
 
 class FileUploader {
   constructor() {
     this.filename = "";
     this.options = {};
-    this.storage = multer.memoryStorage();
-    this.upload = multer({
-      storage: this.storage,
-      limits: {
-        fileSize: 1024 * 1024 * 30,
-        files: 5,
-      },
-      fileFilter: (req, file, cb) => {
-        if (
-          !file.originalname.match(/\.(jpg|jpeg|png|gif|mp4|mov|avi|mkv)$/i)
-        ) {
-          return cb(new Error("Invalid File type"), false);
-        } else {
-          cb(null, true);
-        }
+    this.filelimit = 5;
+    this.filesize = 5;
+    this.storage = multer.diskStorage({
+      filename: (req, file, cb) => {
+        const uniqueName = `${Date.now()}-${Math.round(
+          Math.random() * 1e9
+        )}${path.extname(file.originalname)}`;
+        cb(null, uniqueName);
       },
     });
+    this.upload = (filesize = 5) => {
+      this.filesize = filesize;
+      return multer({
+        storage: this.storage,
+        limits: {
+          fileSize: 1024 * 1024 * this.filesize,
+          files: this.filelimit,
+        },
+        fileFilter: (req, file, cb) => {
+          if (
+            !file.originalname.match(/\.(jpg|jpeg|png|gif|mp4|mov|avi|mkv)$/i)
+          ) {
+            return cb(new Error("Invalid File type"), false);
+          } else {
+            cb(null, true);
+          }
+        },
+      }).fields([
+        { name: "image", maxCount: 5 },
+        { name: "video", maxCount: 1 },
+        { name: "pdf", maxCount: 1 },
+        { name: "audio", maxCount: 1 },
+      ]);
+    };
     this.cloudinaryConfig = {
       cloud_name: process.env.CLOUD_NAME,
       api_key: process.env.CLOUD_API_KEY,
@@ -33,111 +49,112 @@ class FileUploader {
     cloudinary.config(this.cloudinaryConfig);
   }
 
-  async uploadToCloudinary(file, onProgress = () => {}) {
+  async uploadToCloudinary(filepath) {
+    try {
+      const upload = cloudinary.uploader.upload(filepath, this.options);
+      return upload;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async uploadFile(req, res, filesize) {
     return new Promise((resolve, reject) => {
-      const uploadstream = cloudinary.uploader.upload_stream(
-        { resource_type: "auto" },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(result);
+      const uploader = this.upload(filesize);
+      uploader(req, res, (err) => {
+        if (err) {
+          if (err instanceof multer.MulterError) {
+            if (err.code === "LIMIT_UNEXPECTED_FILE") {
+              reject(
+                new Error(
+                  `Unexpected Field: ${err.field} Expected fields are: image, video, pdf, audio`
+                )
+              );
+            } else if (err.code === "LIMIT_FILE_SIZE") {
+              reject(
+                new Error(
+                  `File size is too large provide file not more than ${filesize} mb`
+                )
+              );
+            }
           }
+          reject(err);
+        } else {
+          if (!req.files || req.files.length === 0) {
+            reject(new Error("File not found"));
+          }
+          resolve(req.files);
         }
-      );
-
-      const readStream = new stream.Readable();
-      readStream.push(file.buffer);
-      readStream.push(null);
-
-      readStream.pipe(uploadstream).on("data", (chunk) => {
-        onProgress(chunk.length);
       });
     });
   }
-
-  async handleFileUpload(req, res) {
+  async handleFileUpload(req, res, filesize = 5) {
     try {
-      const totalSize = req.headers["content-length"];
-      const multerUpload = this.upload.array(this.filename, 5);
-      const bar = new ProgressBar("Uploading [:bar] :rate/bps :percent :etas", {
-        total: parseInt(totalSize, 10),
-        width: 30,
-      });
-
-      req.on("data", (chunk) => {
-        bar.tick(chunk.length);
-        // console.log(`Progress: ${bar.curr}%`);
-      });
-      await new Promise((resolve, reject) => {
-        multerUpload(req, res, (err) => {
-          if (err instanceof multer.MulterError) {
-            reject({ error: "File upload error check the filename" });
-          } else if (err) {
-            reject({ error: err.message });
-          }
-
-          resolve();
-        });
-      });
-      if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ error: "No file provided" });
+      const files = await this.uploadFile(req, res, filesize);
+      return files;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+  async singleUploadCloudinary(file, options = {}) {
+    try {
+      options["public_id"] = "";
+      if (!file?.path) {
+        throw new Error("No Path Found on the file");
       }
-      const filesToUpload = req.files.filter((file) => {
-        const validFileName = file.originalname.match(
-          /^[\w-]+\.(jpg|jpeg|png|gif|mp4|mov|avi|mkv)$/i
-        );
-        return validFileName;
-      });
-      return filesToUpload;
+      if (file?.public_id) {
+        options["public_id"] = file.public_id;
+      } else {
+        delete options["public_id"];
+      }
+      this.options = options;
+      const upload = await this.uploadToCloudinary(file.path);
+      const { secure_url, public_id } = upload;
+      return { url: secure_url, public_id: public_id };
     } catch (error) {
-      return { error: error.message };
+      throw new Error(error);
     }
   }
 
-  async singleUploadCloudinary(file) {
+  async multipleUploadCloudinary(files, options = {}) {
     try {
-      const bar = new ProgressBar("Uploading [:bar] :rate/bps :percent :etas", {
-        total: parseInt(file.size, 10),
-        width: 30,
-      });
-      const upload = await this.uploadToCloudinary(file, (chunksize) => {
-        bar.tick(chunksize);
-      });
-      const { secure_url } = upload;
-      return { url: secure_url };
+      const urls = [];
+      for (const file of files) {
+        if (file?.path) {
+          const upload = await this.singleUploadCloudinary(file, options);
+          urls.push(upload);
+        }
+      }
+      return urls;
     } catch (error) {
-      return { error: error.message };
+      throw new Error(error);
     }
   }
 
-  async multipleUploadCloudinary(files) {
+  async getImagesInFolder(folderPath) {
     try {
-      const upload = files.map(async (file) => {
-        const bar = new ProgressBar(
-          "Uploading [:bar] :rate/bps :percent :etas",
-          {
-            total: parseInt(file.size, 10),
-            width: 30,
-          }
-        );
-        const uploader = await this.uploadToCloudinary(file, (chunksize) => {
-          bar.tick(chunksize);
-        });
-        const { secure_url } = uploader;
-        return { url: secure_url };
+      const result = await cloudinary.api.resources({
+        type: "upload",
+        prefix: folderPath,
       });
-      const result = await Promise.allSettled(upload);
-      const formatted = result.map((res) => {
-        return {
-          url: res.value.url,
-          status: res.status,
-          reason: res.reason,
-        };
-      });
-      return formatted;
+
+      const images = result.resources.map((resource) => ({
+        public_id: resource.public_id,
+        url: resource.secure_url,
+      }));
+
+      return images;
     } catch (error) {
-      return { error: error.message };
+      throw new Error(error);
+    }
+  }
+
+  async deleteCloudinaryImage(public_id) {
+    try {
+      const result = await cloudinary.uploader.destroy(public_id);
+      return result;
+    } catch (error) {
+      throw new Error(error);
     }
   }
 }

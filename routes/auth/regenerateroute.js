@@ -3,8 +3,8 @@ const router = express.Router();
 const {
   validateQueryParamsSchema,
 } = require("../../middlewares/validationAuth");
-const { regenerateSchema } = require("../../schema/schema");
-const regenerateToken = require("../../controllers/regenerate");
+const { regenerateSchema } = require("../../schema/authschema/schema");
+const regenerateToken = require("../../controllers/auth/regenerate");
 
 router
   .route("/")

@@ -1,4 +1,4 @@
-const { checkExpireDate } = require("../helpers/helperfuns");
+const { checkExpireDate } = require("../../helpers/helperfuns");
 const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");

@@ -1,3 +1,5 @@
+const { GetAllRoutesFromRouter } = require("../../helpers/helperfuns");
+
 const express = require("express");
 const {
   validateSchema,
@@ -9,7 +11,7 @@ const {
   PersonMeta,
   PersonMetaParams,
   PersonMetaQueryParams,
-} = require("../../schema/schema");
+} = require("../../schema/personschema/schema");
 const {
   CreatePerson,
   AddPersonMeta,
@@ -19,6 +21,8 @@ const {
   GetSinglePerson,
   GetPersonMetaData,
   GetMetaDataSingle,
+  UpdatePersonData,
+  DeletePerson,
 } = require("../../controllers/personcontrollers/personcontroller");
 const VerifyJwt = require("../../middlewares/verifyJwt");
 const VerifyEmail = require("../../middlewares/verifyEmail");
@@ -39,8 +43,17 @@ router
 
 router
   .route("/:personId")
-  .get(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), GetSinglePerson);
+  .get(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), GetSinglePerson)
+  .patch(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin),
+    validateSchema(createPersonSchema, ["gender"]),
+    UpdatePersonData
+  )
+  .delete(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), DeletePerson);
 
+// Person Meta
 router
   .route("/meta/:personId")
   .post(
@@ -81,5 +94,16 @@ router
     VerifyRoles(USER_ROLES.Admin),
     GetMetaDataSingle
   );
+
+// get all routes in the person routes
+const basePath = "/person";
+const allPersonRoutes = GetAllRoutesFromRouter(router);
+const personRoutes = allPersonRoutes.map((route) => {
+  return {
+    path: basePath + route.path,
+    methods: route.methods,
+  };
+});
+module.exports = { personRoutes };
 
 module.exports = router;

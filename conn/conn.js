@@ -1,5 +1,6 @@
 const mysql = require("mysql2/promise");
 const { format, differenceInDays } = require("date-fns");
+const { logEvent } = require("../middlewares/logs");
 
 class Connection {
   constructor(config) {
@@ -68,8 +69,9 @@ class Connection {
           return `${column.name} ${column.type}`;
         })
         .join(", ");
-      const sql = `CREATE TABLE ?? (${columnDefinitions},deleted_at datetime null, createdAt datetime not null)`;
+      const sql = `CREATE TABLE ?? (${columnDefinitions},deleted_at datetime null, creationDate datetime not null, isActive int default 1)`;
       const [results] = await this.connection.query(sql, [table]);
+      logEvent(sql, "sql_query.md");
       if (
         results.warningStatus === 0 ||
         (results.warningStatus > 0 && results.affectedRows === 0)
@@ -79,6 +81,7 @@ class Connection {
         return false;
       }
     } catch (error) {
+      logEvent(error.sql, "sql_error.md");
       throw new Error("method-> createTable: " + error.message);
     }
   }
@@ -314,13 +317,17 @@ class Connection {
         throw new Error("Invalid data provided!! Array expected");
       }
       const query = `INSERT INTO ?? SET ?`;
+      let count = 0;
       for (const record of data) {
         const [results] = await this.connection.query(query, [table, record]);
         if (results.affectedRows === 1) {
-          return { insertId: results.insertId, success: true };
-        } else {
-          throw new Error("Error inserting data");
+          count++;
         }
+      }
+      if (count === data.length) {
+        return { success: true };
+      } else {
+        return { success: false };
       }
     } catch (error) {
       throw new Error("method-> insertMany: " + error.message);
@@ -552,6 +559,7 @@ class Connection {
         tables = outdated.map((item) => item.original_table_name);
         records = outdated.length;
       }
+      console.log(records);
       if (records > 0) {
         await this.insertOne("schedulerrun", {
           original_table_name: "recyclebin",

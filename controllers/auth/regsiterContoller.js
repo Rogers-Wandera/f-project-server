@@ -1,7 +1,7 @@
 const { v4: uuid } = require("uuid");
 const { format } = require("date-fns");
 const bcrptjs = require("bcryptjs");
-const SendVerification = require("../mailer/verificationmailer");
+const SendVerification = require("../../mailer/verificationmailer");
 const { addHours } = require("date-fns");
 
 const Register = async (req, res) => {

@@ -43,9 +43,24 @@ const SendEmailLink = async (email, subject, emailData) => {
   }
 };
 
+const GetAllRoutesFromRouter = (router) => {
+  const routes = [];
+  router.stack.forEach((middleware) => {
+    if (middleware.route) {
+      // routes is an array
+      routes.push(middleware.route);
+    } else if (middleware.name === "router") {
+      // recursively call
+      routes.push(...GetAllRoutesFromRouter(middleware.handle));
+    }
+  });
+  return routes;
+};
+
 module.exports = {
   encrypt,
   decrypt,
   checkExpireDate,
   SendEmailLink,
+  GetAllRoutesFromRouter,
 };

@@ -44,6 +44,64 @@ const CreatePerson = async (req, res) => {
   }
 };
 
+const UpdatePersonData = async (req, res) => {
+  try {
+    const { firstName, lastName, gender, nationalId, status } = req.body;
+    const { personId } = req.params;
+    const personobj = {
+      firstName,
+      lastName,
+      gender,
+      status,
+      nationalId: nationalId.toUpperCase(),
+    };
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+    });
+    if (personExists.length <= 0) {
+      return res
+        .status(401)
+        .json({ msg: "Person with that id does not exist" });
+    }
+    personobj["updatedOn"] = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+    personobj["updatedBy"] = req.user.id;
+
+    const results = await req.db.updateOne(
+      "person",
+      { id: personExists[0].id },
+      personobj
+    );
+    if (!results) {
+      return res.status(500).json({ msg: "Something went wrong" });
+    }
+    res.status(200).json({ msg: "Person updated successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const DeletePerson = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+      isActive: 1,
+    });
+    if (personExists.length <= 0) {
+      return res
+        .status(401)
+        .json({ msg: "Person with that id does not exist" });
+    }
+    const results = await req.db.softDelete("person", { id: personId });
+    if (!results) {
+      return res.status(500).json({ msg: "Something went wrong" });
+    }
+    res.status(200).json({ msg: "Meta deleted successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 const AddPersonMeta = async (req, res) => {
   try {
     const { metaName, metaDesc } = req.body;
@@ -279,4 +337,6 @@ module.exports = {
   GetSinglePerson,
   GetPersonMetaData,
   GetMetaDataSingle,
+  UpdatePersonData,
+  DeletePerson,
 };
