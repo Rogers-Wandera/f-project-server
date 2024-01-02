@@ -26,7 +26,9 @@ class FileUploader {
         },
         fileFilter: (req, file, cb) => {
           if (
-            !file.originalname.match(/\.(jpg|jpeg|png|gif|mp4|mov|avi|mkv)$/i)
+            !file.originalname.match(
+              /\.(jpg|jpeg|png|gif|mp4|mov|mp3|wav|avi|mkv)$/i
+            )
           ) {
             return cb(new Error("Invalid File type"), false);
           } else {

@@ -146,6 +146,33 @@ const PersonImageMetaQueryParams = joi.object({
   }),
 });
 
+const PersonAudioObject = joi.object({
+  path: joi.string().required().messages({
+    "string.empty": "Path cannot be empty",
+    "any.required": "Path is required",
+  }),
+  flags: joi.string().messages({
+    "string.empty": "Flags cannot be empty",
+    "any.required": "Flags is required",
+  }),
+  defaultEncoding: joi.string().messages({
+    "string.empty": "Default encoding cannot be empty",
+    "any.required": "Default encoding is required",
+  }),
+});
+
+const PersonAudioSchema = joi.object({
+  audio: PersonAudioObject.required().messages({
+    "string.empty": "Audio cannot be empty",
+    "any.required": "Audio is required",
+  }),
+  recorded: joi.string().valid("true", "false").required().messages({
+    "string.empty": "Recorded cannot be empty",
+    "any.required": "Recorded is required",
+    "any.only": "Recorded must be true or false",
+  }),
+});
+
 module.exports = {
   createPersonSchema,
   PersonMeta,
@@ -155,4 +182,5 @@ module.exports = {
   PersonImageMetaSchema,
   PersonImageQueryParams,
   PersonImageMetaQueryParams,
+  PersonAudioSchema,
 };

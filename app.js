@@ -24,6 +24,7 @@ const PersonRoute = require("./routes/personroutes/createPerson");
 const PersonImageRoute = require("./routes/personroutes/personimages");
 const { CheckAccessRights } = require("./utils/crons");
 const PersonFolder = require("./routes/personroutes/personfolder");
+const PersonAudioRoute = require("./routes/personroutes/personaudio");
 
 app.use(logger);
 app.use(credentials);
@@ -63,6 +64,7 @@ app.use(`${base_url}/login`, LoginRoute);
 app.use(`${base_url}/person`, PersonRoute);
 app.use(`${base_url}/person/images`, PersonImageRoute);
 app.use(`${base_url}/folder`, PersonFolder);
+app.use(`${base_url}/person/audio`, PersonAudioRoute);
 
 const limiter = RequesteLimiter(2);
 app.use(limiter, notFound);

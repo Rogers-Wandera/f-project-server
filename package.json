@@ -27,6 +27,7 @@
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.6.1",
     "node-cron": "^3.0.2",
+    "node-record-lpcm16": "^1.0.1",
     "nodemailer": "^6.9.5",
     "progress": "^2.0.3",
     "retry": "^0.13.1",
