@@ -140,6 +140,10 @@ const PersonImageMetaQueryParams = joi.object({
     "string.empty": "Meta id cannot be empty",
     "any.required": "Meta id is required param",
   }),
+  imageId: joi.string().required().messages({
+    "string.empty": "Image id cannot be empty",
+    "any.required": "Image id is required param",
+  }),
 });
 
 module.exports = {

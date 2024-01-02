@@ -64,14 +64,230 @@ const AddPersonImage = async (req, res) => {
   }
 };
 
-const DeletePersonImage = async (req, res) => {};
-const GetPersonImages = async (req, res) => {};
+const DeletePersonImage = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    const { imageId } = req.query;
+    // find the person exists
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+    });
+    if (personExists.length <= 0) {
+      return res.status(400).json({ error: "Person not found" });
+    }
+    // find image exists
+    const imageExists = await req.db.findByConditions("imagedata", {
+      id: imageId,
+      personId,
+    });
+    if (imageExists.length <= 0) {
+      return res.status(400).json({ error: "Image not found" });
+    }
+    const results = await req.db.deleteOne("imagedata", { id: imageId });
+    if (!results) {
+      return res.status(500).json({ error: "Something went wrong" });
+    } else {
+      // delete image from the cloud
+      const { publicId } = imageExists[0];
+      const results = await uploader.deleteCloudinaryImage(publicId);
+      console.log(results);
+    }
+    res.status(200).json({ msg: "Image deleted successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+const GetPersonImages = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    // find the person exists
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+    });
+    if (personExists.length <= 0) {
+      return res.status(400).json({ error: "Person not found" });
+    }
+    const images = await req.db.findByConditions("imagedata", {
+      personId,
+      isActive: 1,
+    });
+    res.status(200).json({ images });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 
 // images meta
-const AddPersonImageMeta = async (req, res) => {};
-const UpdatePersonImageMeta = async (req, res) => {};
-const DeletePersonImageMeta = async (req, res) => {};
-const GetPersonImageMeta = async (req, res) => {};
+const AddPersonImageMeta = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    const { imageId } = req.query;
+    const { metaName, metaDesc } = req.body;
+    // find the person exists
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+    });
+    if (personExists.length <= 0) {
+      return res.status(400).json({ error: "Person not found" });
+    }
+    // find image exists
+    const imageExists = await req.db.findByConditions("imagedata", {
+      id: imageId,
+      personId,
+    });
+    if (imageExists.length <= 0) {
+      return res.status(400).json({ error: "Image not found" });
+    }
+    // find meta exists
+    const metaExists = await req.db.findByConditions("imagemetadata", {
+      imageId,
+      metaName,
+    });
+    if (metaExists.length > 0) {
+      return res
+        .status(400)
+        .json({ error: "Meta with that name already exists" });
+    }
+    // insert data
+    const data = {
+      metaName,
+      metaDesc,
+      imageId,
+      isActive: 1,
+      createdBy: req.user.id,
+      creationDate: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+    };
+    const results = await req.db.insertOne("imagemetadata", data);
+    if (!results?.success) {
+      return res.status(500).json({ error: "Something went wrong" });
+    }
+    res.status(200).json({ msg: "Meta added successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+const UpdatePersonImageMeta = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    const { imageId, metaId } = req.query;
+    const { metaName, metaDesc } = req.body;
+    // find the person exists
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+    });
+    if (personExists.length <= 0) {
+      return res.status(400).json({ error: "Person not found" });
+    }
+    // find image exists
+    const imageExists = await req.db.findByConditions("imagedata", {
+      id: imageId,
+      personId,
+    });
+    if (imageExists.length <= 0) {
+      return res.status(400).json({ error: "Image not found" });
+    }
+    // find meta exists
+    const metaExists = await req.db.findByConditions("imagemetadata", {
+      imageId,
+      id: metaId,
+    });
+    if (metaExists.length <= 0) {
+      return res.status(400).json({ error: "Meta does not exist" });
+    }
+    const data = {
+      metaName,
+      metaDesc,
+      modifiedBy: req.user.id,
+      modificationDate: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+    };
+    const results = await req.db.updateOne(
+      "imagemetadata",
+      { id: metaId },
+      data
+    );
+    if (!results) {
+      return res.status(500).json({ error: "Something went wrong" });
+    }
+    res.status(200).json({ msg: "Meta updated successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+const DeletePersonImageMeta = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    const { imageId, metaId } = req.query;
+    // find the person exists
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+    });
+    if (personExists.length <= 0) {
+      return res.status(400).json({ error: "Person not found" });
+    }
+    // find image exists
+    const imageExists = await req.db.findByConditions("imagedata", {
+      id: imageId,
+      personId,
+    });
+    if (imageExists.length <= 0) {
+      return res.status(400).json({ error: "Image not found" });
+    }
+    // find meta exists
+    const metaExists = await req.db.findByConditions("imagemetadata", {
+      imageId,
+      id: metaId,
+      isActive: 1,
+    });
+    if (metaExists.length <= 0) {
+      return res.status(400).json({ error: "Meta does not exist" });
+    }
+    const response = await req.db.softDelete("imagemetadata", {
+      id: metaId,
+    });
+    if (!response) {
+      return res.status(500).json({ error: "Something went wrong" });
+    }
+    res.status(200).json({ msg: "Meta deleted successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+const GetPersonImageMeta = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    const { imageId } = req.query;
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+    });
+    if (personExists.length <= 0) {
+      return res.status(400).json({ error: "Person not found" });
+    }
+    // find image exists
+    const imageExists = await req.db.findByConditions("imagedata", {
+      id: imageId,
+      personId,
+    });
+    if (imageExists.length <= 0) {
+      return res.status(400).json({ error: "Image not found" });
+    }
+    const meta = await req.db.findByConditions("imagemetadata", {
+      imageId,
+      isActive: 1,
+    });
+    res.status(200).json({ meta });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const getImagesInFolder = async (req, res) => {
+  try {
+    const data = await uploader.getImagesInFolder("persons");
+    res.status(200).json({ data });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 
 module.exports = {
   AddPersonImage,
@@ -81,4 +297,5 @@ module.exports = {
   UpdatePersonImageMeta,
   DeletePersonImageMeta,
   GetPersonImageMeta,
+  getImagesInFolder,
 };

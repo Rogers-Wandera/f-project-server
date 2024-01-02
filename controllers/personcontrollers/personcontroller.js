@@ -109,7 +109,7 @@ const AddPersonMeta = async (req, res) => {
     const personExists = await req.db.findByConditions("person", {
       id: personId,
     });
-    if (personExists.length > 0) {
+    if (personExists.length <= 0) {
       return res
         .status(401)
         .json({ msg: "Person with that id does not exist" });

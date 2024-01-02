@@ -30,6 +30,7 @@ const loginController = async (req, res) => {
           roles: roles,
           id: user.id,
         },
+        sub: user.id,
       },
       process.env.JWT_SECRET,
       // it should expire in the next 12 hours

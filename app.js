@@ -23,6 +23,7 @@ const Server = http.createServer(app);
 const PersonRoute = require("./routes/personroutes/createPerson");
 const PersonImageRoute = require("./routes/personroutes/personimages");
 const { CheckAccessRights } = require("./utils/crons");
+const PersonFolder = require("./routes/personroutes/personfolder");
 
 app.use(logger);
 app.use(credentials);
@@ -61,11 +62,7 @@ app.use(`${base_url}/resetpassword`, ResetPassword);
 app.use(`${base_url}/login`, LoginRoute);
 app.use(`${base_url}/person`, PersonRoute);
 app.use(`${base_url}/person/images`, PersonImageRoute);
-
-// // error middleware
-// app.use((err, req, res, next) => {
-//   res.status(500).json({ error: err.message });
-// });
+app.use(`${base_url}/folder`, PersonFolder);
 
 const limiter = RequesteLimiter(2);
 app.use(limiter, notFound);

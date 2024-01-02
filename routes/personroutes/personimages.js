@@ -17,6 +17,7 @@ const {
   UpdatePersonImageMeta,
   DeletePersonImageMeta,
   GetPersonImageMeta,
+  getImagesInFolder,
 } = require("../../controllers/personcontrollers/personimages/personimagecontroller");
 const {
   PersonImageSchema,
@@ -66,7 +67,6 @@ router
     VerifyJwt,
     VerifyEmail,
     VerifyRoles(USER_ROLES.Admin),
-    validateQueryParamsSchema(PersonImageQueryParams),
     validateQueryParamsSchema(PersonImageMetaQueryParams),
     validateSchema(PersonImageMetaSchema),
     UpdatePersonImageMeta
@@ -75,9 +75,10 @@ router
     VerifyJwt,
     VerifyEmail,
     VerifyRoles(USER_ROLES.Admin),
-    validateQueryParamsSchema(PersonImageQueryParams),
     validateQueryParamsSchema(PersonImageMetaQueryParams),
     DeletePersonImageMeta
   );
+
+router.route("/folder/:personId").get(getImagesInFolder);
 
 module.exports = router;

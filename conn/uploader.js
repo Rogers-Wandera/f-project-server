@@ -137,7 +137,6 @@ class FileUploader {
         type: "upload",
         prefix: folderPath,
       });
-
       const images = result.resources.map((resource) => ({
         public_id: resource.public_id,
         url: resource.secure_url,
