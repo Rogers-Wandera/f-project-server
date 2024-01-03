@@ -173,6 +173,13 @@ const PersonAudioSchema = joi.object({
   }),
 });
 
+const PersonAudioParams = joi.object({
+  audioId: joi.string().required().messages({
+    "string.empty": "Audio id cannot be empty",
+    "any.required": "Audio id is required param",
+  }),
+});
+
 module.exports = {
   createPersonSchema,
   PersonMeta,
@@ -183,4 +190,5 @@ module.exports = {
   PersonImageQueryParams,
   PersonImageMetaQueryParams,
   PersonAudioSchema,
+  PersonAudioParams,
 };

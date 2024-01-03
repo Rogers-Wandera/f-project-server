@@ -18,8 +18,13 @@ const {
   UploadPersonAudio,
   CancelUpload,
   UploadAudioFromLocal,
+  GetPersonAudioCloud,
+  DeleteAudioCloudRecord,
 } = require("../../controllers/personcontrollers/personaudios/personaudioscontroller");
-const { PersonAudioSchema } = require("../../schema/personschema/schema");
+const {
+  PersonAudioSchema,
+  PersonAudioParams,
+} = require("../../schema/personschema/schema");
 
 router
   .route("/:personId")
@@ -73,6 +78,22 @@ router
     VerifyEmail,
     VerifyRoles(USER_ROLES.Admin),
     UploadAudioFromLocal
+  );
+
+router
+  .route("/cloudaudio/:personId")
+  .get(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin),
+    GetPersonAudioCloud
+  )
+  .delete(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin),
+    validateQueryParamsSchema(PersonAudioParams),
+    DeleteAudioCloudRecord
   );
 
 module.exports = router;

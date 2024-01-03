@@ -150,9 +150,11 @@ class FileUploader {
     }
   }
 
-  async deleteCloudinaryImage(public_id) {
+  async deleteCloudinaryImage(public_id, resource_type = "upload") {
     try {
-      const result = await cloudinary.uploader.destroy(public_id);
+      const result = await cloudinary.uploader.destroy(public_id, {
+        resource_type: resource_type,
+      });
       return result;
     } catch (error) {
       throw new Error(error);

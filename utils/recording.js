@@ -28,7 +28,6 @@ class Recorder {
         .on("data", (data) => {
           this.audioLength += data.length;
           // Check if the audio length has reached one minute
-          console.log(this.audioLength);
           if (this.audioLength >= 44100 * 2 * 60 && !this.timeoutflag) {
             this.timeoutflag = true;
             this.stop();

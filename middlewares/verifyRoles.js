@@ -1,4 +1,5 @@
 const { checkExpireDate } = require("../helpers/helperfuns");
+const { logEvent } = require("./logs");
 
 const VerifyRoles = (...allowedRoles) => {
   return async (req, res, next) => {
@@ -58,6 +59,10 @@ const VerifyRoles = (...allowedRoles) => {
             .json({ msg: "This is a protected Route. Contact Admin" });
         }
       }
+      // log the user and what he or she is accessing
+      const usercred = `Name: ${req.user.displayName}, Id: ${req.user.id} `;
+      const accessroute = ` Method: ${method}, Route: ${urlpath}`;
+      logEvent(usercred + accessroute, "accesslog.md");
       next();
     } catch (error) {
       res.status(400).json({ error: "Verify roles error -> " + error.message });

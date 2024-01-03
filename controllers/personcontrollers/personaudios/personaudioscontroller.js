@@ -106,7 +106,6 @@ const GetPersonAudio = async (req, res) => {
     }
     const recordobj = getRecorderInstances(personId);
     const audiodata = recordobj.retrieve();
-    console.log(audiodata);
     const { path, flags } = audiodata;
     const defaultEncoding = audiodata._readableState.defaultEncoding;
     const audio = { path, flags, defaultEncoding };
@@ -121,6 +120,8 @@ const UploadPersonAudio = async (req, res) => {
     const { audio, recorded } = req.body;
     const { path } = audio;
     const { personId } = req.params;
+    // turn recorded to boolean
+    const record = recorded === "true" ? true : false;
     const personExists = await req.db.findByConditions("person", {
       id: personId,
     });
@@ -157,7 +158,7 @@ const UploadPersonAudio = async (req, res) => {
     if (!results?.success) {
       return res.status(500).json({ error: "Something went wrong" });
     }
-    if (recorded == true) {
+    if (record) {
       const recordobj = getRecorderInstances(personId);
       // delete the file from the recordings
       recordobj.deleterecord();
@@ -210,6 +211,64 @@ const UploadAudioFromLocal = async (req, res) => {
   }
 };
 
+const GetPersonAudioCloud = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+    });
+    if (personExists.length <= 0) {
+      res.status(400).json({ msg: "No person found" });
+      return;
+    }
+    // get audios
+    const audiofiles = await req.db.findByConditions("personaudio", {
+      personId: personId,
+      isActive: 1,
+    });
+    res.status(200).json({ audiofiles });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const DeleteAudioCloudRecord = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    const { audioId } = req.query;
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+    });
+    if (personExists.length <= 0) {
+      res.status(400).json({ msg: "No person found" });
+      return;
+    }
+    const audiofiles = await req.db.findByConditions("personaudio", {
+      personId: personId,
+      isActive: 1,
+      id: audioId,
+    });
+    if (audiofiles.length <= 0) {
+      res.status(400).json({ msg: "No audio found" });
+      return;
+    }
+    // delete the audio from db and the cloud
+    const results = await req.db.deleteOne("personaudio", {
+      id: audioId,
+    });
+    if (!results) {
+      return res.status(500).json({ error: "Something went wrong" });
+    } else {
+      const { publicId } = audiofiles[0];
+      const response = await uploader.deleteCloudinaryImage(publicId, "raw");
+      console.log(response);
+    }
+    res.status(200).json({ msg: "Audio deleted successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 module.exports = {
   RecordPersonAudio,
   GetPersonAudio,
@@ -219,4 +278,6 @@ module.exports = {
   UploadPersonAudio,
   CancelUpload,
   UploadAudioFromLocal,
+  GetPersonAudioCloud,
+  DeleteAudioCloudRecord,
 };
