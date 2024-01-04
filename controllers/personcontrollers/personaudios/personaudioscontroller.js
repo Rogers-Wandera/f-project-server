@@ -3,6 +3,10 @@ const fs = require("fs");
 const FileUploader = require("../../../conn/uploader");
 const uploader = new FileUploader();
 const { format } = require("date-fns");
+const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
+const ffmpeg = require("fluent-ffmpeg");
+ffmpeg.setFfmpegPath(ffmpegPath);
+const fspath = require("path");
 
 const imageotions = {
   use_filename: true,
@@ -13,6 +17,24 @@ const imageotions = {
   alt: "",
   resource_type: "",
 };
+
+function convertToWav(inputFilePath, outputFilePath) {
+  try {
+    ffmpeg()
+      .input(inputFilePath)
+      .audioCodec("pcm_s16le") // Set the audio codec to PCM 16-bit little-endian (WAV format)
+      .output(outputFilePath)
+      .on("end", () => {
+        console.log("Conversion finished");
+      })
+      .on("error", (err) => {
+        throw new Error(err.message);
+      })
+      .run();
+  } catch (error) {
+    throw new Error(error);
+  }
+}
 const recorders = {};
 const getRecorderInstances = (personId) => {
   if (!recorders[personId]) {
@@ -158,11 +180,12 @@ const UploadPersonAudio = async (req, res) => {
     if (!results?.success) {
       return res.status(500).json({ error: "Something went wrong" });
     }
+    const recordobj = getRecorderInstances(personId);
     if (record) {
-      const recordobj = getRecorderInstances(personId);
       // delete the file from the recordings
       recordobj.deleterecord();
     }
+    recordobj.deleteconverted();
     res.status(200).json({ msg: "File uploaded successfully" });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -193,6 +216,14 @@ const CancelUpload = async (req, res) => {
 
 const UploadAudioFromLocal = async (req, res) => {
   try {
+    const { personId } = req.query;
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+    });
+    if (personExists.length <= 0) {
+      res.status(400).json({ msg: "No person found" });
+      return;
+    }
     const audioToUpload = await uploader.handleFileUpload(req, res);
     if (!audioToUpload?.audio) {
       return res
@@ -201,8 +232,20 @@ const UploadAudioFromLocal = async (req, res) => {
     }
     const audiofiles = audioToUpload.audio;
     const { path } = audiofiles[0];
+    let pathfile = path;
+    const convertpath = fspath.join(__dirname, "..", "..", "..", "converted");
+    // check if file is wav
+    const iswav = uploader.checkWavFormat(path);
+    if (!iswav) {
+      if (!fs.existsSync(convertpath)) {
+        fs.mkdirSync(convertpath);
+      }
+      const newaudiopath = fspath.join(convertpath, `${personId}.wav`);
+      convertToWav(path, newaudiopath);
+      pathfile = newaudiopath;
+    }
     const audio = {
-      path: path,
+      path: pathfile,
       defaultEncoding: audioToUpload.audio[0].encoding,
     };
     res.status(200).json({ audio });

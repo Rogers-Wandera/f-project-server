@@ -24,6 +24,7 @@ const {
 const {
   PersonAudioSchema,
   PersonAudioParams,
+  PersonMetaParams,
 } = require("../../schema/personschema/schema");
 
 router
@@ -77,6 +78,7 @@ router
     VerifyJwt,
     VerifyEmail,
     VerifyRoles(USER_ROLES.Admin),
+    validateQueryParamsSchema(PersonMetaParams),
     UploadAudioFromLocal
   );
 

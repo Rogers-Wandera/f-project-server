@@ -27,7 +27,7 @@ class FileUploader {
         fileFilter: (req, file, cb) => {
           if (
             !file.originalname.match(
-              /\.(jpg|jpeg|png|gif|mp4|mov|mp3|wav|avi|mkv)$/i
+              /\.(jpg|jpeg|png|gif|mp4|mov|mp3|wav|avi|ogg|mkv)$/i
             )
           ) {
             return cb(new Error("Invalid File type"), false);
@@ -159,6 +159,11 @@ class FileUploader {
     } catch (error) {
       throw new Error(error);
     }
+  }
+
+  checkWavFormat(filepath) {
+    const extension = path.extname(filepath).toLowerCase();
+    return extension === ".wav";
   }
 }
 

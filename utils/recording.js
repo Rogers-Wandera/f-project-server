@@ -3,6 +3,11 @@ const fs = require("fs");
 const path = require("path");
 
 class Recorder {
+  /**
+   * Constructor for the Recorder class.
+   * @param {string} personId - Unique identifier for the person associated with the recording.
+   * @param {function} onRecordComplete - Callback function to execute when recording is complete.
+   */
   constructor(personId, onRecordComplete) {
     this.personId = personId;
     this.filepath = path.join(__dirname, "..", "recordings");
@@ -15,6 +20,10 @@ class Recorder {
     }
   }
 
+  /**
+   * Starts the audio recording process.
+   * Continuously updates the audio length and stops recording when it reaches one minute.
+   */
   start() {
     try {
       this.recordingStream = recorder
@@ -43,6 +52,9 @@ class Recorder {
     }
   }
 
+  /**
+   * Stops the audio recording process.
+   */
   stop() {
     try {
       if (this.recordingStream) {
@@ -56,6 +68,9 @@ class Recorder {
     }
   }
 
+  /**
+   * Pauses the audio recording process.
+   */
   pause() {
     try {
       if (this.recordingStream) {
@@ -66,6 +81,10 @@ class Recorder {
     }
   }
 
+  /**
+   * Resumes the audio recording process.
+   * Stops recording if the audio length has reached one minute.
+   */
   resume() {
     try {
       if (this.recordingStream) {
@@ -80,6 +99,11 @@ class Recorder {
     }
   }
 
+  /**
+   * Retrieves the recorded audio file stream.
+   * @returns {fs.ReadStream} - Readable stream for the recorded audio file.
+   * @throws {Error} - If the recording file is not found.
+   */
   retrieve() {
     try {
       const recordingPath = path.join(this.filepath, `${this.personId}.wav`);
@@ -94,6 +118,11 @@ class Recorder {
     }
   }
 
+  /**
+   * Deletes the recorded audio file.
+   * @returns {boolean} - True if the file is successfully deleted.
+   * @throws {Error} - If the recording file is not found.
+   */
   deleterecord() {
     try {
       const recordingPath = path.join(this.filepath, `${this.personId}.wav`);
@@ -105,6 +134,24 @@ class Recorder {
       }
     } catch (error) {
       throw new Error("Error deleting recording -> " + error.message);
+    }
+  }
+
+  deleteconverted() {
+    try {
+      const recordingPath = path.join(
+        __dirname,
+        "..",
+        "converted",
+        `${this.personId}.wav`
+      );
+      if (fs.existsSync(recordingPath)) {
+        fs.unlinkSync(recordingPath);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      throw new Error("Error deleting recording converted -> " + error.message);
     }
   }
 }
