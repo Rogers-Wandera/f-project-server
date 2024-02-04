@@ -247,6 +247,21 @@ const UploadImages = async (req, res) => {
   }
 };
 
+const UploadAudio = async (req, res) => {
+  try {
+    const audioToUpload = await fileuploader.handleFileUpload(req, res);
+    if (!audioToUpload?.audio) {
+      return res
+        .status(400)
+        .json({ error: "No audio uploaded please select an image" });
+    }
+    const audios = audioToUpload.audio;
+    res.status(200).json({ audios });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 module.exports = {
   AddRoles,
   CreateTable,
@@ -257,4 +272,5 @@ module.exports = {
   GetTempRolesMethods,
   RemoveTempRole,
   UploadImages,
+  UploadAudio,
 };

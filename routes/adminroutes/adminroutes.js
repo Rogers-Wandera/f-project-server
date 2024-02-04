@@ -24,6 +24,7 @@ const {
   GetTempRolesMethods,
   RemoveTempRole,
   UploadImages,
+  UploadAudio,
 } = require("../../controllers/admin/admincontrollers");
 
 router
@@ -87,5 +88,9 @@ router
 router
   .route("/upload")
   .post(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), UploadImages);
+
+router
+  .route("/audioupload")
+  .post(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), UploadAudio);
 
 module.exports = router;
