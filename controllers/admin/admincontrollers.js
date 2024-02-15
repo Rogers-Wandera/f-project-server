@@ -234,7 +234,7 @@ const CreateTable = async (req, res) => {
 
 const UploadImages = async (req, res) => {
   try {
-    const imagesToUpload = await fileuploader.handleFileUpload(req, res);
+    const imagesToUpload = await fileuploader.handleFileUpload(req, res, 10);
     if (!imagesToUpload?.image) {
       return res
         .status(400)

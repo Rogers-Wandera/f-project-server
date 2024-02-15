@@ -25,6 +25,7 @@ const PersonImageRoute = require("./routes/personroutes/personimages");
 const { CheckAccessRights } = require("./utils/crons");
 const PersonFolder = require("./routes/personroutes/personfolder");
 const PersonAudioRoute = require("./routes/personroutes/personaudio");
+const UserRoute = require("./routes/auth/userroute");
 
 app.use(logger);
 app.use(credentials);
@@ -53,7 +54,7 @@ app.use((req, res, next) => {
 
 // routes
 app.get("/", (req, res) => {
-  res.send("hello welcome to my api");
+  res.json({ message: "Welcome to the API" });
 });
 app.use(`${base_url}/register`, RegisterRoute);
 app.use(`${base_url}/admin`, AdminRoute);
@@ -65,6 +66,7 @@ app.use(`${base_url}/person`, PersonRoute);
 app.use(`${base_url}/person/images`, PersonImageRoute);
 app.use(`${base_url}/folder`, PersonFolder);
 app.use(`${base_url}/person/audio`, PersonAudioRoute);
+app.use(`${base_url}/user`, UserRoute);
 
 const limiter = RequesteLimiter(2);
 app.use(limiter, notFound);

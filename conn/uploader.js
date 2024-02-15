@@ -6,7 +6,7 @@ class FileUploader {
   constructor() {
     this.filename = "";
     this.options = {};
-    this.filelimit = 5;
+    this.filelimit = 40;
     this.filesize = 5;
     this.storage = multer.diskStorage({
       filename: (req, file, cb) => {
@@ -27,7 +27,7 @@ class FileUploader {
         fileFilter: (req, file, cb) => {
           if (
             !file.originalname.match(
-              /\.(jpg|jpeg|png|gif|mp4|mov|mp3|wav|avi|ogg|mkv)$/i
+              /\.(jpg|jpeg|png|gif|mp4|mov|mp3|wav|avi|ogg|mkv|waptt)$/i
             )
           ) {
             return cb(new Error("Invalid File type"), false);
@@ -36,7 +36,7 @@ class FileUploader {
           }
         },
       }).fields([
-        { name: "image", maxCount: 5 },
+        { name: "image", maxCount: this.filelimit },
         { name: "video", maxCount: 1 },
         { name: "pdf", maxCount: 1 },
         { name: "audio", maxCount: 1 },
@@ -68,16 +68,14 @@ class FileUploader {
           if (err instanceof multer.MulterError) {
             if (err.code === "LIMIT_UNEXPECTED_FILE") {
               reject(
-                new Error(
-                  `Unexpected Field: ${err.field} Expected fields are: image, video, pdf, audio`
-                )
+                `Unexpected Field: ${err.field} Expected fields are: image, video, pdf, audio`
               );
             } else if (err.code === "LIMIT_FILE_SIZE") {
               reject(
-                new Error(
-                  `File size is too large provide file not more than ${filesize} mb`
-                )
+                `File size is too large provide file not more than ${filesize} mb`
               );
+            } else if (err.code === "LIMIT_FILE_COUNT") {
+              reject("Maximum number of files exceeded");
             }
           }
           reject(err);

@@ -3,9 +3,9 @@ const fs = require("fs");
 const FileUploader = require("../../../conn/uploader");
 const uploader = new FileUploader();
 const { format } = require("date-fns");
-const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
-const ffmpeg = require("fluent-ffmpeg");
-ffmpeg.setFfmpegPath(ffmpegPath);
+// const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
+// const ffmpeg = require("fluent-ffmpeg");
+// ffmpeg.setFfmpegPath(ffmpegPath);
 const fspath = require("path");
 
 const imageotions = {

@@ -34,7 +34,7 @@ const loginController = async (req, res) => {
       },
       process.env.JWT_SECRET,
       // it should expire in the next 12 hours
-      { expiresIn: "12h" }
+      { expiresIn: "6h" }
     );
     await req.db.updateOne(
       "users",

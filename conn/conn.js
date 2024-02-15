@@ -96,6 +96,28 @@ class Connection {
     }
   }
 
+  async FindSelectiveOne(table, id, fields = "*") {
+    try {
+      let query;
+      let params;
+
+      if (Array.isArray(fields)) {
+        // If fields is an array, join the fields with commas
+        query = `SELECT ?? FROM ?? WHERE ?`;
+        params = [fields, table, id];
+      } else {
+        // If fields is a string or not provided, use it directly
+        query = `SELECT ${fields} FROM ?? WHERE ?`;
+        params = [table, id];
+      }
+      // const query = `SELECT * FROM ?? WHERE ?`;
+      const rows = await this.executeQuery(query, params);
+      return rows[0] || null;
+    } catch (error) {
+      throw new Error("method-> FindSelectiveOne: " + error.message);
+    }
+  }
+
   async findAll(table) {
     try {
       const query = `SELECT * FROM ??`;
