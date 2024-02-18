@@ -42,6 +42,7 @@ class Connection {
       const [rows, fileds] = await this.connection.query(query, params);
       return rows;
     } catch (error) {
+      logEvent(error.message, "sql_error.md");
       throw new Error("method-> executeQuery: " + error.message);
     }
   }
