@@ -3,7 +3,7 @@ const {
   resetPassword,
   resetPasswordLink,
   resetUserPassword,
-} = require("../../controllers/resetPassword");
+} = require("../../controllers/auth/resetPassword");
 const {
   validateSchema,
   validateParamsSchema,
@@ -13,7 +13,7 @@ const {
   resetPasswordLinkSchema,
   resetUserPasswordParamsSchema,
   resetUserPasswordSchema,
-} = require("../../schema/schema");
+} = require("../../schema/authschema/schema");
 const { RequesteLimiter } = require("../../middlewares/ratelimiter");
 const router = express.Router();
 

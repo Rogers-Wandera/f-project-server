@@ -1,7 +1,7 @@
 const bcryptjs = require("bcryptjs");
 const { format } = require("date-fns");
 const jwt = require("jsonwebtoken");
-const userRoles = require("../conn/rolesList");
+const userRoles = require("../../conn/rolesList");
 const loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -30,9 +30,11 @@ const loginController = async (req, res) => {
           roles: roles,
           id: user.id,
         },
+        sub: user.id,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "2 days" }
+      // it should expire in the next 12 hours
+      { expiresIn: "6h" }
     );
     await req.db.updateOne(
       "users",

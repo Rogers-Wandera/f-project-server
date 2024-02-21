@@ -6,7 +6,7 @@ const http = require("http");
 const Connection = require("./conn/conn");
 const { dbConfig } = require("./conn/configs");
 const RegisterRoute = require("./routes/auth/registerroute");
-const CreateTable = require("./routes/helperroutes/createtable");
+const AdminRoute = require("./routes/adminroutes/adminroutes");
 const VerifyRoute = require("./routes/auth/verifyroute");
 const RegenerateRoute = require("./routes/auth/regenerateroute");
 const notFound = require("./errorHandler/notfound");
@@ -20,18 +20,27 @@ const LoginRoute = require("./routes/auth/loginroute");
 const cronjob = require("node-cron");
 const app = express();
 const Server = http.createServer(app);
+const PersonRoute = require("./routes/personroutes/createPerson");
+const PersonImageRoute = require("./routes/personroutes/personimages");
+const { CheckAccessRights } = require("./utils/crons");
+const PersonFolder = require("./routes/personroutes/personfolder");
+const PersonAudioRoute = require("./routes/personroutes/personaudio");
+const UserRoute = require("./routes/auth/userroute");
+const ModulesRouter = require("./routes/adminroutes/modules");
 
 app.use(logger);
 app.use(credentials);
 app.use(cors(corsOptions));
 
 const database = new Connection(dbConfig);
+// const fileupload = new FileUploader();
 const base_url = process.env.BASE_API;
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {
   req.db = database;
+  // req.upload = fileupload;
   next();
 });
 app.use((req, res, next) => {
@@ -45,17 +54,21 @@ app.use((req, res, next) => {
 });
 
 // routes
+app.get("/", (req, res) => {
+  res.json({ message: "Welcome to the API" });
+});
 app.use(`${base_url}/register`, RegisterRoute);
-app.use(`${base_url}/admin`, CreateTable);
+app.use(`${base_url}/admin`, AdminRoute);
 app.use(`${base_url}/verify`, VerifyRoute);
 app.use(`${base_url}/regenerate`, RegenerateRoute);
 app.use(`${base_url}/resetpassword`, ResetPassword);
 app.use(`${base_url}/login`, LoginRoute);
-
-// error middleware
-app.use((err, req, res, next) => {
-  res.status(500).json({ error: err.message });
-});
+app.use(`${base_url}/person`, PersonRoute);
+app.use(`${base_url}/person/images`, PersonImageRoute);
+app.use(`${base_url}/folder`, PersonFolder);
+app.use(`${base_url}/person/audio`, PersonAudioRoute);
+app.use(`${base_url}/user`, UserRoute);
+app.use(`${base_url}/modules`, ModulesRouter);
 
 const limiter = RequesteLimiter(2);
 app.use(limiter, notFound);
@@ -66,6 +79,10 @@ Server.listen(port, async () => {
   try {
     await database.connectDB();
     console.log(`Server running on port ${port}`);
+    // hourly cron
+    cronjob.schedule("0 * * * *", async () => {
+      await CheckAccessRights(database);
+    });
     await database.disconnectDb();
     const midnightCrons = () => {
       cronjob.schedule("0 0 * * *", async () => {

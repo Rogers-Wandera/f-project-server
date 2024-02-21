@@ -1,5 +1,5 @@
 const { addHours, format } = require("date-fns");
-const { SendEmailLink, checkExpireDate } = require("../helpers/helperfuns");
+const { SendEmailLink, checkExpireDate } = require("../../helpers/helperfuns");
 const path = require("path");
 const fs = require("fs");
 const ejs = require("ejs");

@@ -1,5 +1,6 @@
 const mysql = require("mysql2/promise");
 const { format, differenceInDays } = require("date-fns");
+const { logEvent } = require("../middlewares/logs");
 
 class Connection {
   constructor(config) {
@@ -41,6 +42,7 @@ class Connection {
       const [rows, fileds] = await this.connection.query(query, params);
       return rows;
     } catch (error) {
+      logEvent(error.message, "sql_error.md");
       throw new Error("method-> executeQuery: " + error.message);
     }
   }
@@ -52,6 +54,16 @@ class Connection {
       return rows;
     } catch (error) {
       throw new Error("method-> countRecords: " + error.message);
+    }
+  }
+
+  async countFieldCriteria(table, field) {
+    try {
+      const query = `select max(??) as pos from ??;`;
+      const [rows] = await this.executeQuery(query, [field, table]);
+      return rows || null;
+    } catch (error) {
+      throw new Error("method-> countFieldCriteria: " + error.message);
     }
   }
 
@@ -68,8 +80,9 @@ class Connection {
           return `${column.name} ${column.type}`;
         })
         .join(", ");
-      const sql = `CREATE TABLE ?? (${columnDefinitions})`;
+      const sql = `CREATE TABLE ?? (${columnDefinitions},deleted_at datetime null, creationDate datetime not null, isActive int default 1)`;
       const [results] = await this.connection.query(sql, [table]);
+      logEvent(sql, "sql_query.md");
       if (
         results.warningStatus === 0 ||
         (results.warningStatus > 0 && results.affectedRows === 0)
@@ -79,6 +92,7 @@ class Connection {
         return false;
       }
     } catch (error) {
+      logEvent(error.sql, "sql_error.md");
       throw new Error("method-> createTable: " + error.message);
     }
   }
@@ -90,6 +104,51 @@ class Connection {
       return rows[0] || null;
     } catch (error) {
       throw new Error("method-> findOne: " + error.message);
+    }
+  }
+
+  async findOneWithValue(table, field, value, additional_args = {}) {
+    try {
+      let query = `SELECT * FROM ?? WHERE LOWER(??) = LOWER(?)`;
+      const params = [table, field, value];
+
+      // Loop through additional_args object and add conditions to the query
+      let conditionCount = 0;
+      for (const key in additional_args) {
+        if (additional_args.hasOwnProperty(key)) {
+          query += conditionCount === 0 ? " AND" : " OR";
+          query += ` ?? = ?`;
+          params.push(key, additional_args[key]);
+          conditionCount++;
+        }
+      }
+
+      const rows = await this.executeQuery(query, params);
+      return rows[0] || null;
+    } catch (error) {
+      throw new Error("method-> findOneWithValue: " + error.message);
+    }
+  }
+
+  async FindSelectiveOne(table, id, fields = "*") {
+    try {
+      let query;
+      let params;
+
+      if (Array.isArray(fields)) {
+        // If fields is an array, join the fields with commas
+        query = `SELECT ?? FROM ?? WHERE ?`;
+        params = [fields, table, id];
+      } else {
+        // If fields is a string or not provided, use it directly
+        query = `SELECT ${fields} FROM ?? WHERE ?`;
+        params = [table, id];
+      }
+      // const query = `SELECT * FROM ?? WHERE ?`;
+      const rows = await this.executeQuery(query, params);
+      return rows[0] || null;
+    } catch (error) {
+      throw new Error("method-> FindSelectiveOne: " + error.message);
     }
   }
 
@@ -220,7 +279,7 @@ class Connection {
         throw new Error("No record found");
       }
       // const query = `DELETE FROM ?? WHERE id = ?`;
-      const query = `UPDATE ?? SET deleted_at = ? WHERE id = ?`;
+      const query = `UPDATE ?? SET deleted_at = ?, isActive = 0 WHERE id = ?`;
       const results = await this.executeQuery(query, [
         table,
         format(new Date(), "yyyy-MM-dd HH:mm:ss"),
@@ -242,7 +301,7 @@ class Connection {
       if (!this.connection) {
         throw new Error("Connection not established");
       }
-      await this.updateOne(table, id, { deleted_at: null });
+      await this.updateOne(table, id, { deleted_at: null, isActive: 1 });
       const findData = await this.findByConditions("recyclebin", {
         original_table_name: table,
         original_record_id: id,
@@ -250,7 +309,9 @@ class Connection {
       if (findData.length > 0) {
         const sql = "DELETE FROM recyclebin WHERE id = ?";
         await this.connection.query(sql, [findData[0].id]);
+        return true;
       }
+      return false;
     } catch (error) {
       throw new Error("method-> restoreDelete: " + error.message);
     }
@@ -314,13 +375,17 @@ class Connection {
         throw new Error("Invalid data provided!! Array expected");
       }
       const query = `INSERT INTO ?? SET ?`;
+      let count = 0;
       for (const record of data) {
         const [results] = await this.connection.query(query, [table, record]);
         if (results.affectedRows === 1) {
-          return { insertId: results.insertId, success: true };
-        } else {
-          throw new Error("Error inserting data");
+          count++;
         }
+      }
+      if (count === data.length) {
+        return { success: true };
+      } else {
+        return { success: false };
       }
     } catch (error) {
       throw new Error("method-> insertMany: " + error.message);
@@ -415,11 +480,11 @@ class Connection {
   async performJoin(
     mainTable,
     jointable,
-    limit = 10,
-    page = 1,
+    conditions = null,
     sortBy = null,
     sortOrder = null,
-    conditions = null
+    limit = 10,
+    page = 1
   ) {
     try {
       // expected format
@@ -463,7 +528,7 @@ class Connection {
         const whereClause = Object.keys(conditions)
           .map((column) => `${column} = ?`)
           .join(" AND ");
-        sql += `WHERE ${whereClause}`;
+        sql += ` WHERE ${whereClause}`;
         // constructing the values
         const values = Object.values(conditions);
         queryvalues.push(...values);
@@ -552,6 +617,7 @@ class Connection {
         tables = outdated.map((item) => item.original_table_name);
         records = outdated.length;
       }
+      console.log(records);
       if (records > 0) {
         await this.insertOne("schedulerrun", {
           original_table_name: "recyclebin",

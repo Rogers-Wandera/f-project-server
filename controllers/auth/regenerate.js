@@ -2,9 +2,9 @@ const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
 const { format } = require("date-fns");
-const SendVerification = require("../mailer/verificationmailer");
+const SendVerification = require("../../mailer/verificationmailer");
 const { addHours } = require("date-fns");
-const { checkExpireDate } = require("../helpers/helperfuns");
+const { checkExpireDate } = require("../../helpers/helperfuns");
 
 const successDir = path.join(__dirname, "..", "templates", "regenerate.ejs");
 const errorDir = path.join(__dirname, "..", "templates", "failpage.ejs");
