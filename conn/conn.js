@@ -57,6 +57,16 @@ class Connection {
     }
   }
 
+  async countFieldCriteria(table, field) {
+    try {
+      const query = `select max(??) as pos from ??;`;
+      const [rows] = await this.executeQuery(query, [field, table]);
+      return rows || null;
+    } catch (error) {
+      throw new Error("method-> countFieldCriteria: " + error.message);
+    }
+  }
+
   async createTable(table, columns) {
     try {
       if (!this.connection) {
@@ -94,6 +104,29 @@ class Connection {
       return rows[0] || null;
     } catch (error) {
       throw new Error("method-> findOne: " + error.message);
+    }
+  }
+
+  async findOneWithValue(table, field, value, additional_args = {}) {
+    try {
+      let query = `SELECT * FROM ?? WHERE LOWER(??) = LOWER(?)`;
+      const params = [table, field, value];
+
+      // Loop through additional_args object and add conditions to the query
+      let conditionCount = 0;
+      for (const key in additional_args) {
+        if (additional_args.hasOwnProperty(key)) {
+          query += conditionCount === 0 ? " AND" : " OR";
+          query += ` ?? = ?`;
+          params.push(key, additional_args[key]);
+          conditionCount++;
+        }
+      }
+
+      const rows = await this.executeQuery(query, params);
+      return rows[0] || null;
+    } catch (error) {
+      throw new Error("method-> findOneWithValue: " + error.message);
     }
   }
 
@@ -276,7 +309,9 @@ class Connection {
       if (findData.length > 0) {
         const sql = "DELETE FROM recyclebin WHERE id = ?";
         await this.connection.query(sql, [findData[0].id]);
+        return true;
       }
+      return false;
     } catch (error) {
       throw new Error("method-> restoreDelete: " + error.message);
     }

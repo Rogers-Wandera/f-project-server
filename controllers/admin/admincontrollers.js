@@ -1,6 +1,8 @@
 const USER_ROLES = require("../../conn/rolesList");
 const { format } = require("date-fns");
 const FileUploader = require("../../conn/uploader");
+const Modules = require("../../models/modulesmodel");
+const ModuleLinks = require("../../models/modulelinksmodel");
 const fileuploader = new FileUploader();
 
 const GetUserRoles = async (req, res) => {
@@ -262,6 +264,96 @@ const UploadAudio = async (req, res) => {
   }
 };
 
+const AddModules = async (req, res) => {
+  try {
+    const modulesobj = new Modules(req.db);
+    const { name, position } = req.body;
+    modulesobj.Name = name;
+    modulesobj.Position = position;
+    modulesobj.IsActive = 1;
+    modulesobj.CreationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+    const results = await modulesobj.AddModules();
+    if (results.success) {
+      return res.status(200).json({ msg: "Module added successfully" });
+    }
+    res.status(200).json(results);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const RemoveModules = async (req, res) => {
+  try {
+    const moduleobj = new Modules(req.db);
+    const { moduleId } = req.params;
+    moduleobj.Id = moduleId;
+    const response = await moduleobj.DeleteModules();
+    if (response) {
+      return res.status(200).json({ msg: "Module removed successfully" });
+    }
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const EditModules = async (req, res) => {
+  try {
+    const modulesobj = new Modules(req.db);
+    const { name, position } = req.body;
+    const { moduleId } = req.params;
+    modulesobj.Name = name;
+    modulesobj.Position = position;
+    modulesobj.Id = moduleId;
+    const results = await modulesobj.UpdateModules();
+    if (results) {
+      return res.status(200).json({ msg: "Module edited successfully" });
+    }
+    res.status(200).json(results);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const GetModules = (req, res) => {
+  try {
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const AddModuleLinks = async (req, res) => {
+  try {
+    const { linkname, route, position } = req.body;
+    const { moduleId } = req.params;
+    const modules = new Modules(req.db);
+    const modulelinks = new ModuleLinks(req.db);
+    modules.Id = moduleId;
+    await modules.__find();
+    modulelinks.ModuleId = moduleId;
+    modulelinks.LinkName = linkname;
+    modulelinks.Route = route;
+    modulelinks.Position = position;
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const UpdateModuleLinks = async (req, res) => {
+  try {
+    const {} = req.body;
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const DeleteModuleLinks = async (req, res) => {
+  try {
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 module.exports = {
   AddRoles,
   CreateTable,
@@ -273,4 +365,11 @@ module.exports = {
   RemoveTempRole,
   UploadImages,
   UploadAudio,
+  AddModules,
+  RemoveModules,
+  EditModules,
+  GetModules,
+  AddModuleLinks,
+  UpdateModuleLinks,
+  DeleteModuleLinks,
 };
