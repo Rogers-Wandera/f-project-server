@@ -83,7 +83,7 @@ class ModuleLinks extends Model {
 
   async restoreDeletedModule() {
     try {
-      const exists = await this.findModuleByName(0);
+      const exists = await this.findLinkByName(0);
       if (exists) {
         this.id = exists.id;
         this.isActive = 1;

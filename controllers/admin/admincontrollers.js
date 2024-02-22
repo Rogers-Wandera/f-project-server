@@ -3,6 +3,8 @@ const { format } = require("date-fns");
 const FileUploader = require("../../conn/uploader");
 const Modules = require("../../models/modulesmodel");
 const ModuleLinks = require("../../models/modulelinksmodel");
+const CreateModelClass = require("../../builder/classbuilder");
+const CreateSchema = require("../../builder/schemabuilder");
 const fileuploader = new FileUploader();
 
 const GetUserRoles = async (req, res) => {
@@ -228,7 +230,15 @@ const CreateTable = async (req, res) => {
   try {
     const { tablename, columns } = req.body;
     const result = await req.db.createTable(tablename, columns);
-    res.status(200).json(result);
+    let createclass = false;
+    let schema = false;
+    if (result) {
+      createclass = await CreateModelClass(columns, tablename);
+      schema = await CreateSchema(columns, tablename);
+    }
+    res
+      .status(200)
+      .json({ result: result, createclass: createclass, schema: schema });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -334,6 +344,11 @@ const AddModuleLinks = async (req, res) => {
     modulelinks.LinkName = linkname;
     modulelinks.Route = route;
     modulelinks.Position = position;
+    const response = await modulelinks.AddLink();
+    if (response?.success === false) {
+      return res.status(400).json({ msg: "something went wrong" });
+    }
+    res.status(200).json({ msg: "Link added successfully" });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -341,7 +356,23 @@ const AddModuleLinks = async (req, res) => {
 
 const UpdateModuleLinks = async (req, res) => {
   try {
-    const {} = req.body;
+    const { linkname, route, position } = req.body;
+    const { moduleId, linkId } = req.params;
+    const modules = new Modules(req.db);
+    const modulelinks = new ModuleLinks(req.db);
+    modules.Id = moduleId;
+    modulelinks.Id = linkId;
+    await modules.__find();
+    await modulelinks.__find();
+    modulelinks.ModuleId = moduleId;
+    modulelinks.LinkName = linkname;
+    modulelinks.Route = route;
+    modulelinks.Position = position;
+    const response = await modulelinks.UpdateLink();
+    if (response?.success === false) {
+      return res.status(400).json({ msg: "something went wrong" });
+    }
+    res.status(200).json({ msg: "Link updated successfully" });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -349,6 +380,15 @@ const UpdateModuleLinks = async (req, res) => {
 
 const DeleteModuleLinks = async (req, res) => {
   try {
+    const { linkId } = req.params;
+    const modulelinks = new ModuleLinks(req.db);
+    modulelinks.Id = linkId;
+    await modulelinks.__find();
+    const response = await modulelinks.DeleteLink();
+    if (response?.success === false) {
+      return res.status(400).json({ msg: "something went wrong" });
+    }
+    res.status(200).json({ msg: "Link deleted successfully" });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
