@@ -59,8 +59,12 @@ const SchemaContent = (columns = [], tablename) => {
         }
         schemaobjects[column.name] = `joi.${type}()${
           maxlength ? `.min(3).max(${maxlength})` : ""
-        }${required ? ".required()" : ""}${
+        }${required ? ".required()" : ".optional()"}${
           format ? `.format('${format}')` : ""
+        }${
+          column.enums
+            ? `.valid(${column.enums.map((e) => `'${e}'`).join(",")})`
+            : ""
         }.messages({${
           required ? `'any.required': '${column.name} is required',` : ""
         }${
@@ -71,13 +75,33 @@ const SchemaContent = (columns = [], tablename) => {
           type === "string"
             ? `'string.empty': '${column.name} cannot be empty',`
             : ""
-        }})`;
+        }
+        ${
+          type === "number"
+            ? `'number.base': '${column.name} must be a number',`
+            : ""
+        }
+        ${
+          maxlength
+            ? `'string.max': '${column.name} must be at most {#limit} characters','string.min': '${column.name} must be at least {#limit} characters',`
+            : ""
+        }
+        ${
+          column.enums
+            ? `'any.only': '${column.name} must be one of ${column.enums.join(
+                ", "
+              )}',`
+            : ""
+        }
+      })`;
       }
     });
     let queryname = "";
     // trim away s from the tablename if exists
     if (tablename.endsWith("s")) {
       queryname = tablename.slice(0, -1);
+    } else {
+      queryname = tablename;
     }
     const schemaobjectsEntries = Object.entries(schemaobjects);
     const schemaobjectsString = schemaobjectsEntries
@@ -100,23 +124,30 @@ const SchemaContent = (columns = [], tablename) => {
   }
 };
 
-const CreateSchema = async (columns = [], tablename) => {
+const CreateSchema = async (columns = [], tablename, folder = null) => {
   try {
     if (columns.length === 0) {
       return;
     }
-    const filexists = `${tablename}schema.js`;
-    const filepath = path.join(__dirname, "..", "schema", filexists);
-    const copypath = path.join(__dirname, "..", "Copy", filexists);
+    let filexists = `${tablename}schema.js`;
+    let filepath = path.join(__dirname, "..", "schema", filexists);
+    const copypath = path.join(__dirname, "..", "copy", filexists);
     //   create directory if it does not exist
-    if (!fs.existsSync(path.join(__dirname, "..", "schema"))) {
-      fs.mkdirSync(path.join(__dirname, "..", "schema"));
+    if (folder !== null) {
+      filepath = path.join(__dirname, "..", "schema", folder, filexists);
+      if (!fs.existsSync(path.join(__dirname, "..", "schema", folder))) {
+        fs.mkdirSync(path.join(__dirname, "..", "schema", folder));
+      }
+    } else {
+      if (!fs.existsSync(path.join(__dirname, "..", "schema"))) {
+        fs.mkdirSync(path.join(__dirname, "..", "schema"));
+      }
     }
     // check if fileexists and replace it else create it
     if (fs.existsSync(filepath)) {
       // create a copy of the file and replace it
-      if (!fs.existsSync(path.join(__dirname, "..", "Copy"))) {
-        fs.mkdirSync(path.join(__dirname, "..", "Copy"));
+      if (!fs.existsSync(path.join(__dirname, "..", "copy"))) {
+        fs.mkdirSync(path.join(__dirname, "..", "copy"));
       }
       fs.copyFileSync(filepath, copypath);
       fs.unlinkSync(filepath);

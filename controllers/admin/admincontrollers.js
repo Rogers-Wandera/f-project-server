@@ -5,6 +5,8 @@ const Modules = require("../../models/modulesmodel");
 const ModuleLinks = require("../../models/modulelinksmodel");
 const CreateModelClass = require("../../builder/classbuilder");
 const CreateSchema = require("../../builder/schemabuilder");
+const CreateClassController = require("../../builder/controllerbuilder");
+const CreateRoutes = require("../../builder/routesbuilder");
 const fileuploader = new FileUploader();
 
 const GetUserRoles = async (req, res) => {
@@ -228,18 +230,44 @@ const RemoveTempRole = async (req, res) => {
 
 const CreateTable = async (req, res) => {
   try {
-    const { tablename, columns } = req.body;
+    const {
+      tablename,
+      columns,
+      controllerfolder,
+      routesfolder,
+      schemafolder,
+      routemainname,
+    } = req.body;
     const result = await req.db.createTable(tablename, columns);
     let createclass = false;
     let schema = false;
+    let controller = false;
+    let routes = false;
     if (result) {
       createclass = await CreateModelClass(columns, tablename);
-      schema = await CreateSchema(columns, tablename);
+      schema = await CreateSchema(columns, tablename, schemafolder);
+      controller = await CreateClassController(
+        columns,
+        tablename,
+        controllerfolder
+      );
+      routes = await CreateRoutes(
+        tablename,
+        routesfolder,
+        controllerfolder,
+        schemafolder,
+        routemainname
+      );
     }
-    res
-      .status(200)
-      .json({ result: result, createclass: createclass, schema: schema });
+    res.status(200).json({
+      result: result,
+      createclass: createclass,
+      schema: schema,
+      controller: controller,
+      routes: routes,
+    });
   } catch (error) {
+    await req.db.executeQuery(`DROP TABLE IF EXISTS ${req.body.tablename}`);
     res.status(400).json({ error: error.message });
   }
 };

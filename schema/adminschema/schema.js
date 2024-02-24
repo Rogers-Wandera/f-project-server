@@ -14,6 +14,9 @@ const createColumnsSchema = joi.object({
     "string.min": "Column type must be at least {#limit} characters",
     "string.max": "Column type must be at most {#limit} characters",
   }),
+  enums: joi.array().items(joi.string()).optional().messages({
+    "string.base": "Enums must be an array of strings",
+  }),
 });
 const createTableSchema = joi.object({
   tablename: joi
@@ -35,6 +38,22 @@ const createTableSchema = joi.object({
   columns: joi.array().min(1).items(createColumnsSchema).required().messages({
     "array.min": "At least one column is required",
     "any.required": "Columns are required",
+  }),
+  controllerfolder: joi.string().optional().required().messages({
+    "string.empty": "Controller folder is required",
+    "any.required": "Controller folder is required",
+  }),
+  routesfolder: joi.string().optional().required().messages({
+    "string.empty": "Routes folder is required",
+    "any.required": "Routes folder is required",
+  }),
+  schemafolder: joi.string().optional().required().messages({
+    "string.empty": "Schema folder is required",
+    "any.required": "Schema folder is required",
+  }),
+  routemainname: joi.string().required().required().messages({
+    "string.empty": "Route main name is required",
+    "any.required": "Route main name is required",
   }),
 });
 

@@ -89,6 +89,38 @@ class Model {
       throw new Error("method-> __delete: " + error.message);
     }
   }
+  async __viewdata() {
+    try {
+      if (!this.table) {
+        throw new Error("Table name is required");
+      }
+      const data = await this.db.findPaginate(this.table, 10, 1, "id", "desc");
+      return data;
+    } catch (error) {
+      throw new Error("method-> __viewdata: " + error.message);
+    }
+  }
+
+  async __viewOne() {
+    try {
+      if (!this.table) {
+        throw new Error("Table name is required");
+      }
+      if (!this.id) {
+        throw new Error("Id is required");
+      }
+      const data = await this.db.findByConditions(this.table, {
+        id: this.id,
+        isActive: 1,
+      });
+      if (data.length <= 0) {
+        throw new Error(`No ${this.table} found`);
+      }
+      return data[0];
+    } catch (error) {
+      throw new Error("method-> __viewOne: " + error.message);
+    }
+  }
 }
 
 module.exports = Model;

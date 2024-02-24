@@ -72,23 +72,55 @@ this.userId = null;
  this.deletedBy = deletedBy;
 }set IsActive(isActive) {
  this.isActive = isActive;}
+        //   view data
+        async ViewLinkroles() {
+      try {
+          const results = await this.__viewdata();
+          return results;
+      } catch (error) {
+          throw new Error(error);
+      }
+    }
+        // view one
+        async ViewSingleLinkroles() {
+      try {
+          const results = await this.__viewOne();
+          return results;
+      } catch (error) {
+          throw new Error(error);
+      }
+    }
         //   add function
         async AddLinkroles() {
 
-        this.creationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-        this.isActive = 1;
-        const results = await this.__add();
-        return results;
+       try {
+          this.creationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+          this.isActive = 1;
+          const results = await this.__add();
+          return results;
+       } catch (error) {
+         throw new Error(error);
+       }
     }
         //   update function
         async UpdateLinkroles() {
-        this.updatedDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-        const results = await this.__update();
-        return results;}
+        try {
+           this.updatedDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+           const results = await this.__update();
+           return results;
+        } catch (error) {
+          throw new Error(error);
+        }
+       }
         //   delete function
         async DeleteLinkroles() {
-        this.deleted_at = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-        const results = await this.__delete();
-        return results;}
+      try {
+          this.deleted_at = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+          const results = await this.__delete();
+          return results;
+      } catch (error) {
+          throw new Error(error);
+      }
+    }
     }
  module.exports = Linkroles

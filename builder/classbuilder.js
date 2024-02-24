@@ -14,6 +14,8 @@ const ClassContent = (fields = [], name = "") => {
     let addfunction = "";
     let updatefunction = "";
     let deletefunction = "";
+    let viewdata = "";
+    let viewone = "";
     fields.forEach((field) => {
       attributes += `this.${field.name} = null;\n`;
       let capstr = field.name.charAt(0).toUpperCase() + field.name.slice(1);
@@ -40,19 +42,52 @@ const ClassContent = (fields = [], name = "") => {
     // capitalize the first letter of the name
     let capitalizedStr = name.charAt(0).toUpperCase() + name.slice(1);
     addfunction = `async Add${capitalizedStr}() {\n
-        this.creationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-        this.isActive = 1;
-        const results = await this.__add();
-        return results;
+       try {
+          this.creationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+          this.isActive = 1;
+          const results = await this.__add();
+          return results;
+       } catch (error) {
+         throw new Error(error);
+       }
     }`;
     updatefunction = `async Update${capitalizedStr}() {
-        this.updatedDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-        const results = await this.__update();
-        return results;}`;
+        try {
+           this.updatedDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+           const results = await this.__update();
+           return results;
+        } catch (error) {
+          throw new Error(error);
+        }
+       }`;
     deletefunction = `async Delete${capitalizedStr}() {
-        this.deleted_at = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-        const results = await this.__delete();
-        return results;}`;
+      try {
+          this.deleted_at = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+          const results = await this.__delete();
+          return results;
+      } catch (error) {
+          throw new Error(error);
+      }
+    }`;
+
+    viewdata = `async View${capitalizedStr}() {
+      try {
+          const results = await this.__viewdata();
+          return results;
+      } catch (error) {
+          throw new Error(error);
+      }
+    }`;
+
+    viewone = `async ViewSingle${capitalizedStr}() {
+      try {
+          const results = await this.__viewOne();
+          return results;
+      } catch (error) {
+          throw new Error(error);
+      }
+    }`;
+
     const content = `const Model = require("./modal");\n
     const format = require("date-fns/format");
     class ${capitalizedStr} extends Model {
@@ -73,6 +108,10 @@ const ClassContent = (fields = [], name = "") => {
         ${getters}
         //   setters
         ${setters}
+        //   view data
+        ${viewdata}
+        // view one
+        ${viewone}
         //   add function
         ${addfunction}
         //   update function
@@ -82,7 +121,7 @@ const ClassContent = (fields = [], name = "") => {
     }\n module.exports = ${capitalizedStr}`;
     return content;
   } catch (error) {
-    throw new Error("method-> ClassContent: " + error.message);
+    throw new Error(error.message);
   }
 };
 
@@ -90,7 +129,7 @@ const CreateModelClass = async (fields = [], name = "") => {
   try {
     const filexists = `${name}model.js`;
     const filepath = path.join(__dirname, "..", "models", filexists);
-    const copypath = path.join(__dirname, "..", "Copy", filexists);
+    const copypath = path.join(__dirname, "..", "copy", filexists);
     //   create directory if it does not exist
     if (!fs.existsSync(path.join(__dirname, "..", "models"))) {
       fs.mkdirSync(path.join(__dirname, "..", "models"));
@@ -98,8 +137,8 @@ const CreateModelClass = async (fields = [], name = "") => {
     // check if fileexists and replace it else create it
     if (fs.existsSync(filepath)) {
       // create a copy of the file and replace it
-      if (!fs.existsSync(path.join(__dirname, "..", "Copy"))) {
-        fs.mkdirSync(path.join(__dirname, "..", "Copy"));
+      if (!fs.existsSync(path.join(__dirname, "..", "copy"))) {
+        fs.mkdirSync(path.join(__dirname, "..", "copy"));
       }
       fs.copyFileSync(filepath, copypath);
       fs.unlinkSync(filepath);
@@ -107,7 +146,7 @@ const CreateModelClass = async (fields = [], name = "") => {
     fs.writeFileSync(filepath, ClassContent(fields, name));
     return true;
   } catch (error) {
-    throw new Error("method-> CreateModelClass: " + error.message);
+    throw new Error(error.message);
   }
 };
 
