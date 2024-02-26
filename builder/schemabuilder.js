@@ -3,6 +3,7 @@ const fs = require("fs");
 const SchemaContent = (columns = [], tablename) => {
   try {
     const schemaobjects = {};
+    let datetimeexists = false;
     columns.forEach((column) => {
       if (!column.type.includes("primary")) {
         let type = "";
@@ -37,16 +38,14 @@ const SchemaContent = (columns = [], tablename) => {
         ) {
           type = "number";
           required = column.type.includes("not null") ? true : false;
-        } else if (
-          column.type.startsWith("datetime") ||
-          column.type.startsWith("timestamp")
-        ) {
+        } else if (column.type.startsWith("datetime")) {
           type = "date";
           format = "YYYY-MM-DD HH:mm:ss";
           required = column.type.includes("not null") ? true : false;
+          datetimeexists = true;
         } else if (column.type.startsWith("date")) {
           type = "date";
-          format = "YYYY-MM-DD HH:mm:ss";
+          format = "YYYY-MM-DD";
           required = column.type.includes("not null") ? true : false;
         } else if (column.type.startsWith("time")) {
           type = "date";
@@ -108,7 +107,11 @@ const SchemaContent = (columns = [], tablename) => {
       .map(([key, value]) => `${key}: ${value}`)
       .join(",\n");
 
-    const content = `const joi = require("joi");\n
+    let textimport = "const joi = require('joi');\n";
+    if (datetimeexists === true) {
+      textimport = "const joi = require('joi').extend(require('@joi/date'));\n";
+    }
+    const content = `${textimport}
     const ${tablename}Schema = joi.object({
         ${schemaobjectsString}
     })

@@ -1,5 +1,16 @@
 const joi = require("joi");
 
+const relationshipSchema = joi.object({
+  tablename: joi.string().required().messages({
+    "string.empty": "Table name cannot be empty",
+    "any.required": "Table name is required",
+  }),
+  relationkey: joi.string().required().messages({
+    "string.empty": "Column name cannot be empty",
+    "any.required": "Column name is required",
+  }),
+});
+
 const createColumnsSchema = joi.object({
   name: joi.string().alphanum().min(2).max(30).required().messages({
     "string.empty": "Column name is required",
@@ -16,6 +27,9 @@ const createColumnsSchema = joi.object({
   }),
   enums: joi.array().items(joi.string()).optional().messages({
     "string.base": "Enums must be an array of strings",
+  }),
+  relationship: joi.array().items(relationshipSchema).optional().messages({
+    "string.base": "Relationship must be a string",
   }),
 });
 const createTableSchema = joi.object({

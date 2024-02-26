@@ -1,4 +1,4 @@
-const joi = require("joi");
+const joi = require('joi').extend(require('@joi/date'));
 
     const linkrolesSchema = joi.object({
         linkId: joi.number().required().messages({'any.required': 'linkId is required',
@@ -6,10 +6,15 @@ const joi = require("joi");
         
         
       }),
-userId: joi.string().min(3).max(200).required().valid('people','person').messages({'any.required': 'userId is required','string.empty': 'userId cannot be empty',
+userId: joi.string().min(3).max(200).required().messages({'any.required': 'userId is required','string.empty': 'userId cannot be empty',
         
         'string.max': 'userId must be at most {#limit} characters','string.min': 'userId must be at least {#limit} characters',
-        'any.only': 'userId must be one of people, person',
+        
+      }),
+expireDate: joi.date().required().format('YYYY-MM-DD HH:mm:ss').messages({'any.required': 'expireDate is required','string.format': 'expireDate must be in format YYYY-MM-DD HH:mm:ss',
+        
+        
+        
       })
     })
     const linkrolesQueryParams = joi.object({

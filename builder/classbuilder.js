@@ -2,22 +2,12 @@ const path = require("path");
 const fs = require("fs");
 // this will create classes after the table has been created in the system
 
-const ClassContent = (fields = [], name = "") => {
+const CreateGettersAndSetters = (fields = []) => {
   try {
-    if (fields.length <= 0) {
-      return;
-    }
-    // create the class attributes
-    let attributes = "";
     let getters = "";
     let setters = "";
-    let addfunction = "";
-    let updatefunction = "";
-    let deletefunction = "";
-    let viewdata = "";
-    let viewone = "";
     fields.forEach((field) => {
-      attributes += `this.${field.name} = null;\n`;
+      // attributes += `this.${field.name} = null;\n`;
       let capstr = field.name.charAt(0).toUpperCase() + field.name.slice(1);
       getters += `get ${capstr} () {\n return this.${field.name};\n}`;
       setters += `set ${capstr} (${field.name}) {\n this.${field.name} = ${field.name};\n}`;
@@ -39,10 +29,72 @@ const ClassContent = (fields = [], name = "") => {
     setters += "set DeletedBy(deletedBy) {\n this.deletedBy = deletedBy;\n}";
     getters += "get IsActive() {\n return this.isActive;}";
     setters += "set IsActive(isActive) {\n this.isActive = isActive;}";
-    // capitalize the first letter of the name
+    return { getters, setters };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+
+const relationsbuild = (fields = []) => {
+  try {
+    let relationship = "";
+    let relationshipsclass = "";
+    let relationshipimports = "";
+    fields.forEach((field) => {
+      const relations = field?.relationship;
+      if (relations) {
+        if (relations.length > 0) {
+          relations.forEach((rel) => {
+            const classpath = path.join(
+              __dirname,
+              `../models/${rel.tablename}model.js`
+            );
+            const classname =
+              rel.tablename.charAt(0).toUpperCase() + rel.tablename.slice(1);
+            let queryname = null;
+            if (classname.endsWith("s")) {
+              queryname = classname.slice(0, -1);
+            } else {
+              queryname = classname;
+            }
+            if (fs.existsSync(classpath)) {
+              relationshipimports += `const ${rel.tablename} = require("./${rel.tablename}model");`;
+              relationshipsclass += `const ${queryname} = new ${rel.tablename}();`;
+              relationship += `${queryname}.Id = this.${field.name};
+              await ${queryname}.__find();`;
+            } else {
+              relationshipsclass += `const ${queryname} = await this.db.findByConditions("${rel.tablename}", {${rel.relationkey}: this.${field.name},isActive:1});`;
+              relationship += `if(${queryname}.length <= 0) {
+                throw new Error("No ${queryname} found");
+              };`;
+            }
+          });
+        }
+      }
+    });
+    return {
+      relationship,
+      relationshipsclass,
+      relationshipimports,
+    };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+
+const createFunctions = (fields = [], name = null) => {
+  try {
+    let addfunction = "";
+    let updatefunction = "";
+    let deletefunction = "";
+    let viewdata = "";
+    let viewone = "";
     let capitalizedStr = name.charAt(0).toUpperCase() + name.slice(1);
+    const { relationship, relationshipsclass } = relationsbuild(fields);
     addfunction = `async Add${capitalizedStr}() {\n
        try {
+         ${relationshipsclass}
+         ${relationship}
           this.creationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
           this.isActive = 1;
           const results = await this.__add();
@@ -53,6 +105,8 @@ const ClassContent = (fields = [], name = "") => {
     }`;
     updatefunction = `async Update${capitalizedStr}() {
         try {
+          ${relationshipsclass}
+          ${relationship}
            this.updatedDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
            const results = await this.__update();
            return results;
@@ -87,8 +141,36 @@ const ClassContent = (fields = [], name = "") => {
           throw new Error(error);
       }
     }`;
+    return {
+      addfunction,
+      updatefunction,
+      deletefunction,
+      viewdata,
+      viewone,
+    };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+const ClassContent = (fields = [], name = "") => {
+  try {
+    if (fields.length <= 0) {
+      return;
+    }
+    // create the class attributes
+    let attributes = "";
+    fields.forEach((field) => {
+      attributes += `this.${field.name} = null;\n`;
+    });
+    const { getters, setters } = CreateGettersAndSetters(fields);
+    const { relationshipimports } = relationsbuild(fields);
+    const { addfunction, updatefunction, deletefunction, viewdata, viewone } =
+      createFunctions(fields, name);
+    // capitalize the first letter of the name
+    let capitalizedStr = name.charAt(0).toUpperCase() + name.slice(1);
 
     const content = `const Model = require("./modal");\n
+    ${relationshipimports}
     const format = require("date-fns/format");
     class ${capitalizedStr} extends Model {
         constructor(dbinstance = null) {\n

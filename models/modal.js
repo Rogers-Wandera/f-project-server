@@ -94,7 +94,9 @@ class Model {
       if (!this.table) {
         throw new Error("Table name is required");
       }
-      const data = await this.db.findPaginate(this.table, 10, 1, "id", "desc");
+      const data = await this.db.findPaginate(this.table, 10, 1, "id", "desc", {
+        isActive: 1,
+      });
       return data;
     } catch (error) {
       throw new Error("method-> __viewdata: " + error.message);

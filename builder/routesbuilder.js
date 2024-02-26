@@ -94,9 +94,12 @@ const appendRoute = (routemainname, tablename, folder = null) => {
     let lines = data.split("\n");
     const index = lines.findIndex((line) => line.includes("//end of routes"));
     if (index !== -1) {
-      lines.splice(index, 0, newroute);
-      const text = lines.join("\n");
-      fs.writeFileSync(path.join(__dirname, "..", "app.js"), text);
+      const findlineexists = lines.find((ln) => ln === newroute);
+      if (!findlineexists) {
+        lines.splice(index, 0, newroute);
+        const text = lines.join("\n");
+        fs.writeFileSync(path.join(__dirname, "..", "app.js"), text);
+      }
     }
   } catch (error) {
     console.error(`Error appending route: ${error}`);
@@ -118,13 +121,18 @@ const appendImport = (tablename, folder = null) => {
       line.includes("// end of routes imports")
     );
     if (routesindex !== -1) {
-      lines.splice(
-        routesindex,
-        0,
-        `const ${classname}Router = require("${routerpath}")`
+      const findlineexists = lines.find(
+        (ln) => ln === `const ${classname}Router = require("${routerpath}")`
       );
-      const text = lines.join("\n");
-      fs.writeFileSync(path.join(__dirname, "..", "app.js"), text);
+      if (!findlineexists) {
+        lines.splice(
+          routesindex,
+          0,
+          `const ${classname}Router = require("${routerpath}")`
+        );
+        const text = lines.join("\n");
+        fs.writeFileSync(path.join(__dirname, "..", "app.js"), text);
+      }
     }
   } catch (error) {
     console.error(`Error appending import: ${error}`);

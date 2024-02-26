@@ -22,10 +22,11 @@
     }
     const AddLinkroles = async (req,res) => {
       try {
-        const { linkId,userId, } = req.body;
+        const { linkId,userId,expireDate, } = req.body;
         const linkroles = new Linkroles(req.db);
         linkroles.LinkId = linkId
 linkroles.UserId = userId
+linkroles.ExpireDate = expireDate
 
         linkroles.createdBy = req.user.id;
         const results = await linkroles.AddLinkroles();
@@ -39,12 +40,13 @@ linkroles.UserId = userId
     }
     const UpdateLinkroles = async (req,res) => {
       try {
-        const { linkId,userId, } = req.body;
+        const { linkId,userId,expireDate, } = req.body;
         const { linkroleId } = req.params;
         const linkroles = new Linkroles(req.db);
         linkroles.Id = linkroleId;
         linkroles.LinkId = linkId
 linkroles.UserId = userId
+linkroles.ExpireDate = expireDate
 
         linkroles.updatedBy = req.user.id;
         const results = await linkroles.UpdateLinkroles();
