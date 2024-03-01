@@ -59,7 +59,7 @@ const relationsbuild = (fields = []) => {
             }
             if (fs.existsSync(classpath)) {
               relationshipimports += `const ${rel.tablename} = require("./${rel.tablename}model");`;
-              relationshipsclass += `const ${queryname} = new ${rel.tablename}();`;
+              relationshipsclass += `const ${queryname} = new ${rel.tablename}(this.db);`;
               relationship += `${queryname}.Id = this.${field.name};
               await ${queryname}.__find();`;
             } else {
@@ -82,13 +82,67 @@ const relationsbuild = (fields = []) => {
   }
 };
 
-const createFunctions = (fields = [], name = null) => {
+const DeleteBoilers = (boilers = {}) => {
+  try {
+    let deleteAddons = "";
+    let deleteimports = "";
+    let relaclass = "";
+    let relationsboilers = "";
+    let relationchecks = "";
+    // console.log(boilers.deletefunction.childtables);
+    if (boilers?.deletefunction?.childtables) {
+      if (boilers.deletefunction.childtables.length > 0) {
+        boilers.deletefunction.childtables.forEach((bl) => {
+          const table = bl.table;
+          const classpath = path.join(__dirname, `../models/${table}model.js`);
+          const classname = table.charAt(0).toUpperCase() + table.slice(1);
+          if (fs.existsSync(classpath)) {
+            deleteimports += `const ${table} = require("./${table}model");`;
+            relaclass += `const ${classname} = new ${table}(this.db);`;
+            relationchecks += `const ${classname.toLowerCase()}exists = await ${classname}.__findcriteria({${
+              bl.column
+            }: this.id});`;
+            relationsboilers += `
+            if(${classname.toLowerCase()}exists.length > 0) {
+              ${classname}.Id = ${classname.toLowerCase()}exists[0].id;
+            ${
+              boilers?.deletefunction?.type == "hard"
+                ? `await ${classname}.__harddelete();`
+                : `await ${classname}.__delete();`
+            }}`;
+          } else {
+            relaclass += `const ${classname} = new Model(this.db);
+            ${classname}.table = "${table}";`;
+            relationchecks += `const ${classname.toLowerCase()}exists = await ${classname}.__findcriteria({
+              ${bl.column}: this.id
+            });`;
+            relationsboilers += `
+            if(${classname.toLowerCase()}exists.length > 0) {
+              ${classname}.id = ${classname.toLowerCase()}exists[0].id;
+              ${
+                boilers?.deletefunction?.type == "hard"
+                  ? `await ${classname}.__harddelete();`
+                  : `await ${classname}.__delete();`
+              }}`;
+          }
+        });
+      }
+    }
+    deleteAddons = `${relaclass}\n${relationchecks}\n${relationsboilers}`;
+    return { deleteimports, deleteAddons };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+
+const createFunctions = (fields = [], name = null, boilers = {}) => {
   try {
     let addfunction = "";
     let updatefunction = "";
     let deletefunction = "";
     let viewdata = "";
     let viewone = "";
+    const { deleteAddons, deleteimports } = DeleteBoilers(boilers);
     let capitalizedStr = name.charAt(0).toUpperCase() + name.slice(1);
     const { relationship, relationshipsclass } = relationsbuild(fields);
     addfunction = `async Add${capitalizedStr}() {\n
@@ -118,12 +172,27 @@ const createFunctions = (fields = [], name = null) => {
       try {
           this.deleted_at = format(new Date(), "yyyy-MM-dd HH:mm:ss");
           const results = await this.__delete();
+          ${deleteAddons}
           return results;
       } catch (error) {
           throw new Error(error);
       }
     }`;
 
+    if (boilers?.deletefunction) {
+      if (boilers.deletefunction?.type == "hard") {
+        deletefunction = `async Delete${capitalizedStr}() {
+          try {
+              this.deleted_at = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+              const results = await this.__harddelete();
+               ${deleteAddons}
+              return results;
+          } catch (error) {
+              throw new Error(error);
+          }
+        }`;
+      }
+    }
     viewdata = `async View${capitalizedStr}() {
       try {
           const results = await this.__viewdata();
@@ -147,12 +216,13 @@ const createFunctions = (fields = [], name = null) => {
       deletefunction,
       viewdata,
       viewone,
+      deleteimports,
     };
   } catch (error) {
     throw new Error(error.message);
   }
 };
-const ClassContent = (fields = [], name = "") => {
+const ClassContent = (fields = [], name = "", boilers = {}) => {
   try {
     if (fields.length <= 0) {
       return;
@@ -164,13 +234,20 @@ const ClassContent = (fields = [], name = "") => {
     });
     const { getters, setters } = CreateGettersAndSetters(fields);
     const { relationshipimports } = relationsbuild(fields);
-    const { addfunction, updatefunction, deletefunction, viewdata, viewone } =
-      createFunctions(fields, name);
+    const {
+      addfunction,
+      updatefunction,
+      deletefunction,
+      viewdata,
+      viewone,
+      deleteimports,
+    } = createFunctions(fields, name, boilers);
     // capitalize the first letter of the name
     let capitalizedStr = name.charAt(0).toUpperCase() + name.slice(1);
 
     const content = `const Model = require("./modal");\n
     ${relationshipimports}
+    ${deleteimports}
     const format = require("date-fns/format");
     class ${capitalizedStr} extends Model {
         constructor(dbinstance = null) {\n
@@ -207,7 +284,7 @@ const ClassContent = (fields = [], name = "") => {
   }
 };
 
-const CreateModelClass = async (fields = [], name = "") => {
+const CreateModelClass = async (fields = [], name = "", boilers = {}) => {
   try {
     const filexists = `${name}model.js`;
     const filepath = path.join(__dirname, "..", "models", filexists);
@@ -225,7 +302,7 @@ const CreateModelClass = async (fields = [], name = "") => {
       fs.copyFileSync(filepath, copypath);
       fs.unlinkSync(filepath);
     }
-    fs.writeFileSync(filepath, ClassContent(fields, name));
+    fs.writeFileSync(filepath, ClassContent(fields, name, boilers));
     return true;
   } catch (error) {
     throw new Error(error.message);

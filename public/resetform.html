@@ -111,6 +111,9 @@
           toastr.clear();
           toastr.success(data.msg);
           form.reset();
+          setTimeout(() => {
+            window.location.href = data.url;
+          }, 1000);
         } catch (error) {
           toastr.clear();
           toastr.error(error.message);

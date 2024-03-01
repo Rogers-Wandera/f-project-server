@@ -15,6 +15,7 @@ const cronjob = require("node-cron");
 const app = express();
 const Server = http.createServer(app);
 const { CheckAccessRights } = require("./utils/crons");
+const { RemoveFolder } = require("./helpers/crons.js");
 // start of routes imports
 const RegisterRoute = require("./routes/auth/registerroute");
 const ResetPassword = require("./routes/auth/resetpasswordroute");
@@ -28,7 +29,7 @@ const PersonAudioRoute = require("./routes/personroutes/personaudio");
 const UserRoute = require("./routes/auth/userroute");
 const ModulesRouter = require("./routes/adminroutes/modules");
 const LoginRoute = require("./routes/auth/loginroute");
-const LinkrolesRouter = require("./routes/admin/linkrolesroute.js")
+const LinkrolesRouter = require("./routes/adminroutes/linkrolesroute.js");
 // end of routes imports
 
 app.use(logger);
@@ -91,6 +92,8 @@ Server.listen(port, async () => {
     const midnightCrons = () => {
       cronjob.schedule("0 0 * * *", async () => {
         await database.DeleteRecycleBinData();
+        RemoveFolder("copy");
+        RemoveFolder("recordings");
       });
     };
     midnightCrons();

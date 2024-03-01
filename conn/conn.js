@@ -118,7 +118,7 @@ class Connection {
       let conditionCount = 0;
       for (const key in additional_args) {
         if (additional_args.hasOwnProperty(key)) {
-          query += conditionCount === 0 ? " AND" : " OR";
+          query += conditionCount === 0 ? " AND" : " AND";
           query += ` ?? = ?`;
           params.push(key, additional_args[key]);
           conditionCount++;

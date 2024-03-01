@@ -11,6 +11,113 @@ const relationshipSchema = joi.object({
   }),
 });
 
+// const saveSchema = joi.object({
+//   table: joi.string().required().messages({
+//     "string.empty": "Table name cannot be empty",
+//     "any.required": "Table name is required",
+//   }),
+//   relatedfields: joi
+//     .array()
+//     .items({
+//       name: joi.string().required().messages({
+//         "string.empty": "Name cannot be empty",
+//         "any.required": "Name is required",
+//       }),
+//       parentfield: joi.string().required().messages({
+//         "string.empty": "Parent Field cannot be empty",
+//         "any.required": "Parent Field is required",
+//       }),
+//     })
+//     .required()
+//     .messages({
+//       "any.required": "Related fields are required",
+//     }),
+//   otherfields: joi
+//     .array()
+//     .items(
+//       joi.object({
+//         name: joi.string().required().messages({
+//           "string.empty": "Name cannot be empty",
+//           "any.required": "Name is required",
+//         }),
+//         type: joi
+//           .string()
+//           .valid("string", "number", "date")
+//           .required()
+//           .messages({
+//             "string.empty": "Type cannot be empty",
+//             "any.required": "Type is required",
+//             "any.only": "Type must be 'string', 'number', or 'date'",
+//           }),
+//         defaultValue: joi.any().when("type", {
+//           is: "string",
+//           then: joi.string().required().messages({
+//             "string.empty": "Default value for string cannot be empty",
+//             "any.required": "Default value for string is required",
+//           }),
+//           otherwise: joi.when("type", {
+//             is: "number",
+//             then: joi.number().required().messages({
+//               "any.required": "Default value for number is required",
+//             }),
+//             otherwise: joi.when("type", {
+//               is: "date",
+//               then: joi.date().required().messages({
+//                 "any.required": "Default value for date is required",
+//               }),
+//             }),
+//           }),
+//         }),
+//       })
+//     )
+//     .optional()
+//     .messages({
+//       "any.required": "Other fields are required",
+//     }),
+// });
+
+const boilerfunctionsSchema = joi.object({
+  deletefunction: joi
+    .object({
+      type: joi.string().valid("soft", "hard").required().messages({
+        "string.empty": "Type is required",
+        "any.required": "Type is required",
+        "any.only": "Type must be soft or hard",
+      }),
+      childtables: joi
+        .array()
+        .items({
+          table: joi.string().required().messages({
+            "string.empty": "Child table is required",
+            "any.required": "Child table is required",
+          }),
+          column: joi.string().required().messages({
+            "string.empty": "Child column is required",
+            "any.required": "Child column is required",
+          }),
+        })
+        .optional()
+        .messages({
+          "string.base": "Child tables must be an array of strings",
+          "any.required": "Child tables are required",
+        }),
+    })
+    .optional()
+    .messages({
+      "any.unknown": "Unknown property",
+      "any.required": "Delete function is required",
+    }),
+  // addfunction: joi
+  //   .object({
+  //     saves: joi.array().items().optional().messages({}),
+  //   })
+  //   .optional()
+  //   .messages({
+  //     "any.unknown": "Unknown property",
+  //     "any.required": "Add function is required",
+  //   }),
+});
+
 const createColumnsSchema = joi.object({
   name: joi.string().alphanum().min(2).max(30).required().messages({
     "string.empty": "Column name is required",
@@ -68,6 +175,10 @@ const createTableSchema = joi.object({
   routemainname: joi.string().required().required().messages({
     "string.empty": "Route main name is required",
     "any.required": "Route main name is required",
+  }),
+  boilerfunctions: boilerfunctionsSchema.optional().messages({
+    "any.unknown": "Unknown property",
+    "any.required": "Boiler functions are required",
   }),
 });
 

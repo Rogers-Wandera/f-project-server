@@ -237,6 +237,7 @@ const CreateTable = async (req, res) => {
       routesfolder,
       schemafolder,
       routemainname,
+      boilerfunctions,
     } = req.body;
     const result = await req.db.createTable(tablename, columns);
     let createclass = false;
@@ -244,7 +245,7 @@ const CreateTable = async (req, res) => {
     let controller = false;
     let routes = false;
     if (result) {
-      createclass = await CreateModelClass(columns, tablename);
+      createclass = await CreateModelClass(columns, tablename, boilerfunctions);
       schema = await CreateSchema(columns, tablename, schemafolder);
       controller = await CreateClassController(
         columns,

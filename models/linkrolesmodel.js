@@ -1,6 +1,7 @@
 const Model = require("./modal");
 
 const modulelinks = require("./modulelinksmodel");
+
 const format = require("date-fns/format");
 class Linkroles extends Model {
   constructor(dbinstance = null) {
@@ -11,7 +12,6 @@ class Linkroles extends Model {
     this.linkId = null;
     this.userId = null;
     this.expireDate = null;
-
     this.creationDate = null;
     this.createdBy = null;
     this.updatedBy = null;
@@ -89,6 +89,33 @@ class Linkroles extends Model {
   set IsActive(isActive) {
     this.isActive = isActive;
   }
+
+  async findRoleExistsUser(action = "add") {
+    try {
+      let exists = null;
+      if (action == "add") {
+        exists = await this.db.findByConditions("linkroles", {
+          linkId: this.linkId,
+          userId: this.userId,
+          isActive: 1,
+        });
+      } else {
+        const query =
+          "SELECT *FROM linkroles WHERE linkId = ? AND userId = ? AND isActive = 1 AND id != ?;";
+        exists = await this.db.executeQuery(query, [
+          this.linkId,
+          this.userId,
+          this.id,
+        ]);
+      }
+      if (exists.length > 0) {
+        throw new Error("Link role already exists on this user");
+      }
+      return true;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
   //   view data
   async ViewLinkroles() {
     try {
@@ -110,8 +137,8 @@ class Linkroles extends Model {
   //   add function
   async AddLinkroles() {
     try {
-      const Modulelink = new modulelinks();
-      const User = await this.db.findByConditions("user", {
+      const Modulelink = new modulelinks(this.db);
+      const User = await this.db.findByConditions("users", {
         id: this.userId,
         isActive: 1,
       });
@@ -120,6 +147,7 @@ class Linkroles extends Model {
       if (User.length <= 0) {
         throw new Error("No User found");
       }
+      await this.findRoleExistsUser("add");
       this.creationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
       this.isActive = 1;
       const results = await this.__add();
@@ -131,8 +159,8 @@ class Linkroles extends Model {
   //   update function
   async UpdateLinkroles() {
     try {
-      const Modulelink = new modulelinks();
-      const User = await this.db.findByConditions("user", {
+      const Modulelink = new modulelinks(this.db);
+      const User = await this.db.findByConditions("users", {
         id: this.userId,
         isActive: 1,
       });
@@ -141,6 +169,7 @@ class Linkroles extends Model {
       if (User.length <= 0) {
         throw new Error("No User found");
       }
+      await this.findRoleExistsUser("update");
       this.updatedDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
       const results = await this.__update();
       return results;
@@ -153,7 +182,45 @@ class Linkroles extends Model {
     try {
       this.deleted_at = format(new Date(), "yyyy-MM-dd HH:mm:ss");
       const results = await this.__delete();
+
       return results;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async getUserModules(userId) {
+    try {
+      const user = await this.db.findByConditions("users", {
+        id: userId,
+        isActive: 1,
+      });
+      if (user.length <= 0) {
+        throw new Error("No User found");
+      }
+      const data = await this.db.findByConditions("vw_module_roles", {
+        userId: userId,
+      });
+      if (data.length > 0) {
+        const groupedData = data.reduce((acc, item) => {
+          const key = item.name;
+          if (!acc[key]) {
+            acc[key] = [];
+          }
+          acc[key].push({
+            name: item.name,
+            id: item.id,
+            linkId: item.linkId,
+            linkname: item.linkname,
+            route: item.route,
+            expired: item.expired,
+            days_left: item.days_left,
+          });
+          return acc;
+        }, {});
+        return groupedData;
+      }
+      return data;
     } catch (error) {
       throw new Error(error);
     }
