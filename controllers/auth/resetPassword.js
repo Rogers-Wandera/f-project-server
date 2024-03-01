@@ -5,8 +5,8 @@ const fs = require("fs");
 const ejs = require("ejs");
 const bcryptjs = require("bcryptjs");
 
-const directory = path.join(__dirname, "..", "public", "resetform.html");
-const errorDir = path.join(__dirname, "..", "templates", "failpage.ejs");
+const directory = path.join(__dirname, "..", "..", "public", "resetform.html");
+const errorDir = path.join(__dirname, "..", "..", "templates", "failpage.ejs");
 
 const resetPassword = async (req, res) => {
   try {
@@ -53,6 +53,7 @@ const resetPassword = async (req, res) => {
 const resetPasswordLink = async (req, res) => {
   try {
     const { userId, token } = req.params;
+    const base_front_url = process.env.BASE_FRONT_URL;
     const errorPage = fs.readFileSync(errorDir, "utf8");
     let errordata = {
       message: "There was a problem reseting your password",
@@ -64,7 +65,7 @@ const resetPasswordLink = async (req, res) => {
     if (!user) {
       errordata.message = "No user found";
       errordata.text = "Go to";
-      errordata.link = "#";
+      errordata.link = `${base_front_url}`;
       errordata.linktext = "Home";
       const page = ejs.render(errorPage, errordata);
       return res.status(402).send(page);
@@ -77,7 +78,7 @@ const resetPasswordLink = async (req, res) => {
     if (!tokendb.length > 0) {
       errordata.message = "No Token associated with the user";
       errordata.text = "Generate reset token";
-      errordata.link = "#";
+      errordata.link = `${base_front_url}/pwreset`;
       errordata.linktext = "Regenerate Token";
       const page = ejs.render(errorPage, errordata);
       return res.status(402).send(page);
@@ -86,7 +87,7 @@ const resetPasswordLink = async (req, res) => {
     if (expire) {
       errordata.message = "Token has expired";
       errordata.text = "Generate reset token";
-      errordata.link = "#";
+      errordata.link = `${base_front_url}/pwreset`;
       errordata.linktext = "Regenerate Token";
       const page = ejs.render(errorPage, errordata);
       return res.status(402).send(page);
@@ -120,7 +121,10 @@ const resetUserPassword = async (req, res) => {
       { userId: userId, isActive: 1 },
       { isActive: 0 }
     );
-    res.status(200).json({ msg: "Password has been reset successfully" });
+    res.status(200).json({
+      msg: "Password has been reset successfully",
+      url: `${process.env.BASE_FRONT_URL}`,
+    });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

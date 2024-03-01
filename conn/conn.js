@@ -80,7 +80,9 @@ class Connection {
           return `${column.name} ${column.type}`;
         })
         .join(", ");
-      const sql = `CREATE TABLE ?? (${columnDefinitions},deleted_at datetime null, creationDate datetime not null, isActive int default 1)`;
+      const sql = `CREATE TABLE ?? (${columnDefinitions}, creationDate datetime not null,
+        createdBy varchar(200) not null,updatedBy varchar(200) null, updatedDate datetime null,
+        deleted_at datetime null, deletedBy varchar(200) null, isActive int default 1)`;
       const [results] = await this.connection.query(sql, [table]);
       logEvent(sql, "sql_query.md");
       if (
@@ -116,7 +118,7 @@ class Connection {
       let conditionCount = 0;
       for (const key in additional_args) {
         if (additional_args.hasOwnProperty(key)) {
-          query += conditionCount === 0 ? " AND" : " OR";
+          query += conditionCount === 0 ? " AND" : " AND";
           query += ` ?? = ?`;
           params.push(key, additional_args[key]);
           conditionCount++;

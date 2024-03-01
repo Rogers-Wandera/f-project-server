@@ -11,7 +11,7 @@ const errorDir = path.join(__dirname, "..", "templates", "failpage.ejs");
 
 const regenerateToken = async (req, res) => {
   try {
-    const { userId } = req.query;
+    const { id: userId } = req.user;
     const errorPage = fs.readFileSync(errorDir, "utf8");
     const successPage = fs.readFileSync(successDir, "utf8");
     let errordata = {

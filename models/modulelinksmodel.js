@@ -59,17 +59,20 @@ class ModuleLinks extends Model {
           this.linkname,
           {
             isActive: active,
+            moduleId: this.moduleId,
           }
         );
       } else {
         const query =
-          "Select *from ?? where ?? = ? and isActive = 1 and ?? != ?";
+          "Select *from ?? where ?? = ? and isActive = 1 and ?? != ? and ?? = ?";
         const [rows] = await this.db.executeQuery(query, [
           this.table,
           "linkname",
           this.linkname,
           "id",
           this.id,
+          "moduleId",
+          this.moduleId,
         ]);
         if (rows.length > 0) {
           exists = rows[0];
@@ -83,7 +86,7 @@ class ModuleLinks extends Model {
 
   async restoreDeletedModule() {
     try {
-      const exists = await this.findModuleByName(0);
+      const exists = await this.findLinkByName(0);
       if (exists) {
         this.id = exists.id;
         this.isActive = 1;

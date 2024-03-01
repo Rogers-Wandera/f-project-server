@@ -93,7 +93,9 @@
         <h1>Account Verification Successful</h1>
         <p><%= message %></p>
         <p>
-          <%= text %> <a href="<%=link%>"><%= linktext %></a> to your account.
+          <%= text %>
+          <a href="<%=link%>" onclick="localStorage.clear()"><%= linktext %></a>
+          to your account.
         </p>
       </div>
     </div>

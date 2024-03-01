@@ -3,12 +3,19 @@ const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
 
-const successDir = path.join(__dirname, "..", "templates", "successpage.ejs");
-const errorDir = path.join(__dirname, "..", "templates", "failpage.ejs");
+const successDir = path.join(
+  __dirname,
+  "..",
+  "..",
+  "templates",
+  "successpage.ejs"
+);
+const errorDir = path.join(__dirname, "..", "..", "templates", "failpage.ejs");
 
 const Verify = async (req, res) => {
   try {
     const { userId, token } = req.query;
+    const base_front_url = process.env.BASE_FRONT_URL;
     const errorPage = fs.readFileSync(errorDir, "utf8");
     const successPage = fs.readFileSync(successDir, "utf8");
     let errordata = {
@@ -21,7 +28,7 @@ const Verify = async (req, res) => {
     const successdata = {
       message: "You have been verified successfully",
       text: "Go to login page",
-      link: "somewhere",
+      link: `${base_front_url}`,
       linktext: "Login",
     };
     const user = await req.db.findOne("users", { id: userId });
@@ -33,7 +40,7 @@ const Verify = async (req, res) => {
     if (user.verified === 1) {
       errordata.message = "User already verified";
       errordata.text = "Go to login page";
-      errordata.link = "somewhere";
+      errordata.link = `${base_front_url}`;
       errordata.linktext = "Login";
       const pageErr = ejs.render(errorPage, errordata);
       return res.status(401).send(pageErr);
