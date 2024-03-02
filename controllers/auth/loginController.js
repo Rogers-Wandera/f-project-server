@@ -41,6 +41,7 @@ const loginController = async (req, res) => {
       { id: user.id },
       { lastloginDate: format(new Date(), "yyyy-MM-dd HH:mm:ss") }
     );
+    req.io.emit("login", { userId: user.id });
     res.status(200).json({
       msg: `Successfully signed in as ${user.firstname}`,
       accessToken,

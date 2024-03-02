@@ -182,7 +182,6 @@ class Linkroles extends Model {
     try {
       this.deleted_at = format(new Date(), "yyyy-MM-dd HH:mm:ss");
       const results = await this.__delete();
-
       return results;
     } catch (error) {
       throw new Error(error);

@@ -11,9 +11,16 @@ const { logger } = require("./middlewares/logs");
 const corsOptions = require("./conn/corsOptions");
 const credentials = require("./middlewares/credential");
 const { RequesteLimiter } = require("./middlewares/ratelimiter");
+const { Server } = require("socket.io");
 const cronjob = require("node-cron");
 const app = express();
-const Server = http.createServer(app);
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.BASE_FRONT_URL,
+    credentials: true,
+  },
+});
 const { CheckAccessRights } = require("./utils/crons");
 const { RemoveFolder } = require("./helpers/crons.js");
 // start of routes imports
@@ -44,6 +51,7 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {
   req.db = database;
+  req.io = io;
   // req.upload = fileupload;
   next();
 });
@@ -75,12 +83,20 @@ app.use(`${base_url}/user`, UserRoute);
 app.use(`${base_url}/modules`, ModulesRouter);
 app.use(`${base_url}/modules/linkroles`, LinkrolesRouter);
 //end of routes
+
+// io
+io.on("Connection", (socket) => {
+  console.log("cleint connected");
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
+  });
+});
 const limiter = RequesteLimiter(2);
 app.use(limiter, notFound);
 const port = process.env.PORT || 3500;
 
 app.use(errorHandler);
-Server.listen(port, async () => {
+server.listen(port, async () => {
   try {
     await database.connectDB();
     console.log(`Server running on port ${port}`);

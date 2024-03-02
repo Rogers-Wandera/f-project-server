@@ -74,7 +74,7 @@ class Model {
     }
   }
 
-  async __delete() {
+  async __delete(idfield = "id") {
     try {
       if (!this.table) {
         throw new Error("Table name is required");
@@ -83,7 +83,9 @@ class Model {
         throw new Error("Id is required");
       }
       await this.__find();
-      const result = await this.db.softDelete(this.table, this.id);
+      const result = await this.db.softDelete(this.table, {
+        [idfield]: this.id,
+      });
       return result;
     } catch (error) {
       throw new Error("method-> __delete: " + error.message);
