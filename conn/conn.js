@@ -37,7 +37,7 @@ class Connection {
   async executeQuery(query, params = []) {
     try {
       if (!this.connection) {
-        throw new Error("Connection not established");
+        await this.connectDB();
       }
       const [rows, fileds] = await this.connection.query(query, params);
       return rows;

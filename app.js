@@ -12,7 +12,6 @@ const corsOptions = require("./conn/corsOptions");
 const credentials = require("./middlewares/credential");
 const { RequesteLimiter } = require("./middlewares/ratelimiter");
 const { Server } = require("socket.io");
-const cronjob = require("node-cron");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -21,23 +20,8 @@ const io = new Server(server, {
     credentials: true,
   },
 });
-const { CheckAccessRights } = require("./utils/crons");
-const { RemoveFolder } = require("./helpers/crons.js");
-// start of routes imports
-const RegisterRoute = require("./routes/auth/registerroute");
-const ResetPassword = require("./routes/auth/resetpasswordroute");
-const AdminRoute = require("./routes/adminroutes/adminroutes");
-const VerifyRoute = require("./routes/auth/verifyroute");
-const RegenerateRoute = require("./routes/auth/regenerateroute");
-const PersonRoute = require("./routes/personroutes/createPerson");
-const PersonImageRoute = require("./routes/personroutes/personimages");
-const PersonFolder = require("./routes/personroutes/personfolder");
-const PersonAudioRoute = require("./routes/personroutes/personaudio");
-const UserRoute = require("./routes/auth/userroute");
-const ModulesRouter = require("./routes/adminroutes/modules");
-const LoginRoute = require("./routes/auth/loginroute");
-const LinkrolesRouter = require("./routes/adminroutes/linkrolesroute.js");
-// end of routes imports
+const { HandleCrons } = require("./utils/crons");
+const MainRouter = require("./routes");
 
 app.use(logger);
 app.use(credentials);
@@ -69,19 +53,7 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to the API" });
 });
-app.use(`${base_url}/register`, RegisterRoute);
-app.use(`${base_url}/admin`, AdminRoute);
-app.use(`${base_url}/verify`, VerifyRoute);
-app.use(`${base_url}/regenerate`, RegenerateRoute);
-app.use(`${base_url}/resetpassword`, ResetPassword);
-app.use(`${base_url}/login`, LoginRoute);
-app.use(`${base_url}/person`, PersonRoute);
-app.use(`${base_url}/person/images`, PersonImageRoute);
-app.use(`${base_url}/folder`, PersonFolder);
-app.use(`${base_url}/person/audio`, PersonAudioRoute);
-app.use(`${base_url}/user`, UserRoute);
-app.use(`${base_url}/modules`, ModulesRouter);
-app.use(`${base_url}/modules/linkroles`, LinkrolesRouter);
+app.use(`${base_url}`, MainRouter);
 //end of routes
 
 // io
@@ -100,19 +72,8 @@ server.listen(port, async () => {
   try {
     await database.connectDB();
     console.log(`Server running on port ${port}`);
-    // hourly cron
-    cronjob.schedule("0 * * * *", async () => {
-      await CheckAccessRights(database);
-    });
+    HandleCrons(database, io);
     await database.disconnectDb();
-    const midnightCrons = () => {
-      cronjob.schedule("0 0 * * *", async () => {
-        await database.DeleteRecycleBinData();
-        RemoveFolder("copy");
-        RemoveFolder("recordings");
-      });
-    };
-    midnightCrons();
   } catch (error) {
     console.log(error);
   }

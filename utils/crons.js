@@ -1,5 +1,8 @@
 const { format } = require("date-fns");
 const { checkExpireDate } = require("../helpers/helperfuns");
+const Linkroles = require("../models/linkrolesmodel");
+const cronjob = require("node-cron");
+const { RemoveFolder } = require("../helpers/crons");
 
 const InsertSchedule = async (db, records, tablename, action) => {
   try {
@@ -55,4 +58,44 @@ const CheckAccessRights = async (db) => {
   }
 };
 
-module.exports = { CheckAccessRights };
+const HandleExpiredLinkRoles = async (io, database) => {
+  try {
+    const linkroles = new Linkroles(database);
+    const data = await linkroles.getExpiredRoles();
+    if (data.length > 0) {
+      data.forEach(async (row) => {
+        linkroles.Id = row.id;
+        await linkroles.DeleteLinkroles();
+        const userdata = await linkroles.getUserModules(row.userId);
+        io.emit("roleemitter", { userId: row.userId, data: userdata });
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    throw new Error(error);
+  }
+};
+
+const HandleCrons = (database, io) => {
+  try {
+    // minute crons
+    cronjob.schedule("* * * * *", async () => {
+      await HandleExpiredLinkRoles(io, database);
+    });
+    // hourly cron
+    cronjob.schedule("0 * * * *", async () => {
+      await CheckAccessRights(database);
+    });
+
+    // midnight cron
+    cronjob.schedule("0 0 * * *", async () => {
+      await database.DeleteRecycleBinData();
+      RemoveFolder("copy");
+      RemoveFolder("recordings");
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+module.exports = { HandleCrons };

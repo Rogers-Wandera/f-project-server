@@ -29,12 +29,14 @@ const loginController = async (req, res) => {
           displayName: `${user.firstname} ${user.lastname}`,
           roles: roles,
           id: user.id,
+          isLocked: user.isLocked,
+          verified: user.verified,
         },
         sub: user.id,
       },
       process.env.JWT_SECRET,
       // it should expire in the next 12 hours
-      { expiresIn: "6h" }
+      { expiresIn: "2h" }
     );
     await req.db.updateOne(
       "users",
