@@ -354,8 +354,17 @@ const EditModules = async (req, res) => {
   }
 };
 
-const GetModules = (req, res) => {
+const GetModules = async (req, res) => {
   try {
+    const { start, size, filters, globalFilter, sorting } = req.query;
+    const modules = new Modules(req.db);
+    modules.page = parseInt(start);
+    modules.limit = parseInt(size);
+    modules.filters = JSON.parse(filters);
+    modules.globalFilter = globalFilter;
+    modules.sortBy = JSON.parse(sorting);
+    const data = await modules.__viewdata();
+    res.status(200).json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

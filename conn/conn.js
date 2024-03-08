@@ -414,13 +414,28 @@ class Connection {
     }
   }
 
+  async getTableColumns(table) {
+    try {
+      if (!this.connection) {
+        throw new Error("Connection not established");
+      }
+      const [columns] = await this.connection.query(`SHOW COLUMNS FROM ??`, [
+        table,
+      ]);
+      return columns.map((column) => column.Field);
+    } catch (error) {
+      throw new Error("method-> getTableColumns: " + error.message);
+    }
+  }
+
   async findPaginate(
     table,
     limit = 10,
     page = 1,
-    sortBy = null,
-    sortOrder = null,
-    conditions = null
+    sortBy = [],
+    conditions = null,
+    filters = [],
+    globalFilter = null
   ) {
     try {
       if (!this.connection) {
@@ -444,10 +459,55 @@ class Connection {
         queryvalues.push(...values);
       }
 
-      if (sortBy && sortOrder) {
-        const order = sortOrder.toLowerCase() === "desc" ? "DESC" : "ASC";
-        sql += ` ORDER BY ?? ${order}`;
-        queryvalues.push(sortBy);
+      if (globalFilter) {
+        const columns = await this.getTableColumns(table);
+        const queryValues = Array(columns.length).fill(`%${globalFilter}%`);
+        if (conditions && Object.keys(conditions).length > 0) {
+          const globalSearchCluases = columns
+            .map((columns) => `${columns} LIKE ?`)
+            .join(" OR ");
+          sql += ` AND (${globalSearchCluases})`;
+          queryvalues.push(...queryValues);
+        } else {
+          const globalSearchCluases = columns
+            .map((columns) => `${columns} LIKE ?`)
+            .join(" OR ");
+          sql += `WHERE (${globalSearchCluases})`;
+          queryvalues.push(...queryValues);
+        }
+      }
+      if (filters.length > 0) {
+        const filterClauses = filters.map((filter) => `${filter.id} LIKE ?`);
+        const filterValues = filters.map((filter) => {
+          const namefiled = filter.id.toLowerCase();
+          let value = "";
+          if (namefiled.includes("date")) {
+            const dateformat = format(new Date(filter.value), "yyyy-MM-dd");
+            value = `%${dateformat}%`;
+          } else {
+            value = `%${filter.value}%`;
+          }
+          return value;
+        });
+        const filterCluase = filterClauses.join(" AND ");
+        if (conditions && Object.keys(conditions).length > 0) {
+          sql += ` AND ${filterCluase}`;
+        } else if (globalFilter) {
+          sql += ` AND ${filterCluase}`;
+        } else {
+          sql += `WHERE ${filterCluase}`;
+        }
+        queryvalues.push(...filterValues);
+      }
+
+      if (sortBy.length > 0) {
+        const sort = sortBy[0].id;
+        let sortorder = "ASC";
+        if (sortBy[0].desc == true) {
+          sortorder = "DESC";
+        }
+        sql += ` ORDER BY ?? ${sortorder}`;
+        queryvalues.push(sort);
       }
 
       if (limit) {
@@ -475,6 +535,7 @@ class Connection {
       }
       return resultSet;
     } catch (error) {
+      logEvent(error.sql, "sql_error.md");
       throw new Error("method-> findPaginate: " + error.message);
     }
   }
