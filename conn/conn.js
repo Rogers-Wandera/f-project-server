@@ -49,7 +49,7 @@ class Connection {
 
   async countRecords(table) {
     try {
-      const query = `SELECT COUNT(*) AS count FROM ??`;
+      const query = `SELECT COUNT(*) AS count FROM ?? WHERE isActive = 1;`;
       const [rows] = await this.executeQuery(query, [table]);
       return rows;
     } catch (error) {
