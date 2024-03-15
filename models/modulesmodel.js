@@ -69,12 +69,35 @@ class Modules extends Model {
   async restoreDeletedModule() {
     try {
       const exists = await this.findModuleByName(0);
+      let position = 0;
       if (exists) {
         this.id = exists.id;
-        const response = await this.db.restoreDelete(this.table, this.id);
+        position = exists.position;
+        if (this.position) {
+          const findposition = await this.db.findByConditions("modules", {
+            position: this.position,
+          });
+          if (findposition.length > 0) {
+            const id = findposition[0].id;
+            await this.db.updateOne(
+              "modules",
+              { id: id },
+              { position: position }
+            );
+            await this.db.updateOne(
+              "modules",
+              { id: this.id },
+              { position: this.position }
+            );
+          }
+        }
+        const response = await this.db.restoreDelete(this.table, {
+          id: this.id,
+        });
         this.id = null;
         return response;
       }
+      return false;
     } catch (error) {
       throw new Error(error);
     }
@@ -142,9 +165,9 @@ class Modules extends Model {
         if (findposition.length <= 0) {
           throw new Error("The position you want to replace to does not exist");
         }
-        if (this.position == findposition[0].position) {
-          throw new Error("The position you want to replace to is same");
-        }
+        // if (this.position == findposition[0].position) {
+        //   throw new Error("The position you want to replace to is same");
+        // }
         if (findposition.length > 0) {
           const id = findposition[0].id;
           await this.db.updateOne(

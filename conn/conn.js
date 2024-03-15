@@ -303,7 +303,10 @@ class Connection {
       if (!this.connection) {
         throw new Error("Connection not established");
       }
-      await this.updateOne(table, id, { deleted_at: null, isActive: 1 });
+      const response = await this.updateOne(table, id, {
+        deleted_at: null,
+        isActive: 1,
+      });
       const findData = await this.findByConditions("recyclebin", {
         original_table_name: table,
         original_record_id: id,
@@ -313,7 +316,7 @@ class Connection {
         await this.connection.query(sql, [findData[0].id]);
         return true;
       }
-      return false;
+      return response;
     } catch (error) {
       throw new Error("method-> restoreDelete: " + error.message);
     }
