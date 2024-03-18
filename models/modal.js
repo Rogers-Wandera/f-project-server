@@ -180,6 +180,26 @@ class Model {
       throw new Error("method-> __findcriteria: " + error.message);
     }
   }
+
+  async __viewCustomQueryPaginate(query = null, params = []) {
+    try {
+      if (!query) {
+        throw new Error("Query is required");
+      }
+      const data = await this.db.customQueryPaginate(
+        query,
+        params,
+        this.limit,
+        this.page,
+        this.sortBy.length > 0 ? this.sortBy : [{ id: "id", desc: true }],
+        this.filters,
+        this.globalFilter
+      );
+      return data;
+    } catch (error) {
+      throw new Error("method-> __viewCustomQueryPaginate: " + error.message);
+    }
+  }
 }
 
 module.exports = Model;

@@ -431,6 +431,21 @@ class Connection {
     }
   }
 
+  async getColumnsQuery(query, params = []) {
+    try {
+      if (!this.connection) {
+        throw new Error("Connection not established");
+      }
+      const [columns] = await this.connection.query(query, params);
+      if (columns.length === 0) return [];
+      const data = columns[0];
+      const keys = Object.keys(data);
+      return keys;
+    } catch (error) {
+      throw new Error("method-> getTableColumns: " + error.message);
+    }
+  }
+
   async findPaginate(
     table,
     limit = 10,
@@ -696,6 +711,121 @@ class Connection {
       return { tables, records, action: "deletion" };
     } catch (error) {
       throw new Error("method->RecycleBinData: " + error.message);
+    }
+  }
+
+  async customQueryPaginate(
+    query,
+    queryParams = [],
+    limit = 10,
+    page = 1,
+    sortBy = [],
+    filters = [],
+    globalFilter = null
+  ) {
+    try {
+      if (!this.connection) {
+        throw new Error("Connection not established");
+      }
+      if (!query) {
+        throw new Error("Query is required");
+      }
+
+      let sql = query.trim();
+      const queryValues = [...queryParams];
+
+      if (sql.trim().endsWith(";")) {
+        sql = sql.trim().slice(0, -1);
+      }
+
+      // Extracting existing WHERE clause, if any
+      let existingWhereClause = false;
+      const whereIndex = sql.toUpperCase().indexOf("WHERE");
+      if (whereIndex !== -1) {
+        existingWhereClause = sql.substring(whereIndex);
+        sql = sql.substring(0, whereIndex);
+        sql += existingWhereClause;
+        existingWhereClause = true;
+      }
+
+      if (globalFilter) {
+        const columns = await this.getColumnsQuery(query, queryParams);
+        const queryvalues = Array(columns.length).fill(`%${globalFilter}%`);
+        if (existingWhereClause) {
+          const globalSearchCluases = columns
+            .map((columns) => `${columns} LIKE ?`)
+            .join(" OR ");
+          sql += ` AND (${globalSearchCluases})`;
+          queryValues.push(...queryvalues);
+        } else {
+          const globalSearchCluases = columns
+            .map((columns) => `${columns} LIKE ?`)
+            .join(" OR ");
+          sql += `WHERE (${globalSearchCluases})`;
+          queryValues.push(...queryvalues);
+        }
+      }
+
+      const another = sql.toUpperCase().indexOf("WHERE");
+      if (another !== -1) {
+        existingWhereClause = sql.substring(whereIndex);
+        sql = sql.substring(0, whereIndex);
+        sql += existingWhereClause;
+        existingWhereClause = true;
+      }
+
+      // Applying additional filters
+      if (filters.length > 0) {
+        const filterClauses = filters.map((filter) => `${filter.id} LIKE ?`);
+        const filterValues = filters.map((filter) => {
+          let value = "";
+          value = `%${filter.value}%`;
+          return value;
+        });
+        const filterClause = filterClauses.join(" AND ");
+        if (existingWhereClause) {
+          sql += ` AND (${filterClause})`;
+        } else {
+          sql += ` WHERE ${filterClause}`;
+        }
+        queryValues.push(...filterValues);
+      }
+
+      // Applying sorting
+      if (sortBy.length > 0) {
+        const sort = sortBy[0].id;
+        let sortOrder = "ASC";
+        if (sortBy[0].desc) {
+          sortOrder = "DESC";
+        }
+        sql += ` ORDER BY ${sort} ${sortOrder}`;
+      }
+
+      // Applying pagination
+      if (limit) {
+        sql += " LIMIT ?";
+        queryValues.push(limit);
+      }
+      const offsetVal = (page - 1) * limit;
+      sql += " OFFSET ?";
+      sql += ";";
+      queryValues.push(offsetVal);
+
+      // Execute query
+      const [results] = await this.connection.query(sql, queryValues);
+
+      // Return paginated results
+      const resultSet = {
+        docs: results || [],
+        totalDocs: results ? results.length : 0,
+        totalPages: 0,
+        page: 0,
+      };
+
+      return resultSet;
+    } catch (error) {
+      logEvent(error.sql, "sql_error.md");
+      throw new Error("method-> customQueryPaginate: " + error.message);
     }
   }
 }

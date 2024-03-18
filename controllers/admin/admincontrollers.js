@@ -432,6 +432,24 @@ const DeleteModuleLinks = async (req, res) => {
   }
 };
 
+const GetModuleLinks = async (req, res) => {
+  try {
+    const { start, size, filters, globalFilter, sorting } = req.query;
+    const { moduleId } = req.params;
+    const modulelinks = new ModuleLinks(req.db);
+    modulelinks.page = parseInt(start);
+    modulelinks.moduleId = moduleId;
+    modulelinks.limit = parseInt(size);
+    modulelinks.filters = JSON.parse(filters);
+    modulelinks.globalFilter = globalFilter;
+    modulelinks.sortBy = JSON.parse(sorting);
+    const data = await modulelinks.ViewModuleLinks();
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 module.exports = {
   AddRoles,
   CreateTable,
@@ -450,4 +468,5 @@ module.exports = {
   AddModuleLinks,
   UpdateModuleLinks,
   DeleteModuleLinks,
+  GetModuleLinks,
 };
