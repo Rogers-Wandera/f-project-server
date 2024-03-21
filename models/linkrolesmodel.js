@@ -182,7 +182,6 @@ class Linkroles extends Model {
     try {
       this.deleted_at = format(new Date(), "yyyy-MM-dd HH:mm:ss");
       const results = await this.__delete();
-
       return results;
     } catch (error) {
       throw new Error(error);
@@ -209,17 +208,25 @@ class Linkroles extends Model {
           }
           acc[key].push({
             name: item.name,
-            id: item.id,
-            linkId: item.linkId,
             linkname: item.linkname,
             route: item.route,
             expired: item.expired,
-            days_left: item.days_left,
           });
           return acc;
         }, {});
         return groupedData;
       }
+      return data;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async getExpiredRoles() {
+    try {
+      const data = await this.db.findByConditions("vw_module_roles", {
+        expired: 1,
+      });
       return data;
     } catch (error) {
       throw new Error(error);

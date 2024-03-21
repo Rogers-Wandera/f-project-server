@@ -37,7 +37,7 @@ class Connection {
   async executeQuery(query, params = []) {
     try {
       if (!this.connection) {
-        throw new Error("Connection not established");
+        await this.connectDB();
       }
       const [rows, fileds] = await this.connection.query(query, params);
       return rows;
@@ -49,7 +49,7 @@ class Connection {
 
   async countRecords(table) {
     try {
-      const query = `SELECT COUNT(*) AS count FROM ??`;
+      const query = `SELECT COUNT(*) AS count FROM ?? WHERE isActive = 1;`;
       const [rows] = await this.executeQuery(query, [table]);
       return rows;
     } catch (error) {
@@ -303,7 +303,10 @@ class Connection {
       if (!this.connection) {
         throw new Error("Connection not established");
       }
-      await this.updateOne(table, id, { deleted_at: null, isActive: 1 });
+      const response = await this.updateOne(table, id, {
+        deleted_at: null,
+        isActive: 1,
+      });
       const findData = await this.findByConditions("recyclebin", {
         original_table_name: table,
         original_record_id: id,
@@ -313,7 +316,7 @@ class Connection {
         await this.connection.query(sql, [findData[0].id]);
         return true;
       }
-      return false;
+      return response;
     } catch (error) {
       throw new Error("method-> restoreDelete: " + error.message);
     }
@@ -414,13 +417,43 @@ class Connection {
     }
   }
 
+  async getTableColumns(table) {
+    try {
+      if (!this.connection) {
+        throw new Error("Connection not established");
+      }
+      const [columns] = await this.connection.query(`SHOW COLUMNS FROM ??`, [
+        table,
+      ]);
+      return columns.map((column) => column.Field);
+    } catch (error) {
+      throw new Error("method-> getTableColumns: " + error.message);
+    }
+  }
+
+  async getColumnsQuery(query, params = []) {
+    try {
+      if (!this.connection) {
+        throw new Error("Connection not established");
+      }
+      const [columns] = await this.connection.query(query, params);
+      if (columns.length === 0) return [];
+      const data = columns[0];
+      const keys = Object.keys(data);
+      return keys;
+    } catch (error) {
+      throw new Error("method-> getTableColumns: " + error.message);
+    }
+  }
+
   async findPaginate(
     table,
     limit = 10,
     page = 1,
-    sortBy = null,
-    sortOrder = null,
-    conditions = null
+    sortBy = [],
+    conditions = null,
+    filters = [],
+    globalFilter = null
   ) {
     try {
       if (!this.connection) {
@@ -444,10 +477,55 @@ class Connection {
         queryvalues.push(...values);
       }
 
-      if (sortBy && sortOrder) {
-        const order = sortOrder.toLowerCase() === "desc" ? "DESC" : "ASC";
-        sql += ` ORDER BY ?? ${order}`;
-        queryvalues.push(sortBy);
+      if (globalFilter) {
+        const columns = await this.getTableColumns(table);
+        const queryValues = Array(columns.length).fill(`%${globalFilter}%`);
+        if (conditions && Object.keys(conditions).length > 0) {
+          const globalSearchCluases = columns
+            .map((columns) => `${columns} LIKE ?`)
+            .join(" OR ");
+          sql += ` AND (${globalSearchCluases})`;
+          queryvalues.push(...queryValues);
+        } else {
+          const globalSearchCluases = columns
+            .map((columns) => `${columns} LIKE ?`)
+            .join(" OR ");
+          sql += `WHERE (${globalSearchCluases})`;
+          queryvalues.push(...queryValues);
+        }
+      }
+      if (filters.length > 0) {
+        const filterClauses = filters.map((filter) => `${filter.id} LIKE ?`);
+        const filterValues = filters.map((filter) => {
+          const namefiled = filter.id.toLowerCase();
+          let value = "";
+          if (namefiled.includes("date")) {
+            const dateformat = format(new Date(filter.value), "yyyy-MM-dd");
+            value = `%${dateformat}%`;
+          } else {
+            value = `%${filter.value}%`;
+          }
+          return value;
+        });
+        const filterCluase = filterClauses.join(" AND ");
+        if (conditions && Object.keys(conditions).length > 0) {
+          sql += ` AND ${filterCluase}`;
+        } else if (globalFilter) {
+          sql += ` AND ${filterCluase}`;
+        } else {
+          sql += `WHERE ${filterCluase}`;
+        }
+        queryvalues.push(...filterValues);
+      }
+
+      if (sortBy.length > 0) {
+        const sort = sortBy[0].id;
+        let sortorder = "ASC";
+        if (sortBy[0].desc == true) {
+          sortorder = "DESC";
+        }
+        sql += ` ORDER BY ?? ${sortorder}`;
+        queryvalues.push(sort);
       }
 
       if (limit) {
@@ -475,6 +553,7 @@ class Connection {
       }
       return resultSet;
     } catch (error) {
+      logEvent(error.sql, "sql_error.md");
       throw new Error("method-> findPaginate: " + error.message);
     }
   }
@@ -632,6 +711,121 @@ class Connection {
       return { tables, records, action: "deletion" };
     } catch (error) {
       throw new Error("method->RecycleBinData: " + error.message);
+    }
+  }
+
+  async customQueryPaginate(
+    query,
+    queryParams = [],
+    limit = 10,
+    page = 1,
+    sortBy = [],
+    filters = [],
+    globalFilter = null
+  ) {
+    try {
+      if (!this.connection) {
+        throw new Error("Connection not established");
+      }
+      if (!query) {
+        throw new Error("Query is required");
+      }
+
+      let sql = query.trim();
+      const queryValues = [...queryParams];
+
+      if (sql.trim().endsWith(";")) {
+        sql = sql.trim().slice(0, -1);
+      }
+
+      // Extracting existing WHERE clause, if any
+      let existingWhereClause = false;
+      const whereIndex = sql.toUpperCase().indexOf("WHERE");
+      if (whereIndex !== -1) {
+        existingWhereClause = sql.substring(whereIndex);
+        sql = sql.substring(0, whereIndex);
+        sql += existingWhereClause;
+        existingWhereClause = true;
+      }
+
+      if (globalFilter) {
+        const columns = await this.getColumnsQuery(query, queryParams);
+        const queryvalues = Array(columns.length).fill(`%${globalFilter}%`);
+        if (existingWhereClause) {
+          const globalSearchCluases = columns
+            .map((columns) => `${columns} LIKE ?`)
+            .join(" OR ");
+          sql += ` AND (${globalSearchCluases})`;
+          queryValues.push(...queryvalues);
+        } else {
+          const globalSearchCluases = columns
+            .map((columns) => `${columns} LIKE ?`)
+            .join(" OR ");
+          sql += `WHERE (${globalSearchCluases})`;
+          queryValues.push(...queryvalues);
+        }
+      }
+
+      const another = sql.toUpperCase().indexOf("WHERE");
+      if (another !== -1) {
+        existingWhereClause = sql.substring(whereIndex);
+        sql = sql.substring(0, whereIndex);
+        sql += existingWhereClause;
+        existingWhereClause = true;
+      }
+
+      // Applying additional filters
+      if (filters.length > 0) {
+        const filterClauses = filters.map((filter) => `${filter.id} LIKE ?`);
+        const filterValues = filters.map((filter) => {
+          let value = "";
+          value = `%${filter.value}%`;
+          return value;
+        });
+        const filterClause = filterClauses.join(" AND ");
+        if (existingWhereClause) {
+          sql += ` AND (${filterClause})`;
+        } else {
+          sql += ` WHERE ${filterClause}`;
+        }
+        queryValues.push(...filterValues);
+      }
+
+      // Applying sorting
+      if (sortBy.length > 0) {
+        const sort = sortBy[0].id;
+        let sortOrder = "ASC";
+        if (sortBy[0].desc) {
+          sortOrder = "DESC";
+        }
+        sql += ` ORDER BY ${sort} ${sortOrder}`;
+      }
+
+      // Applying pagination
+      if (limit) {
+        sql += " LIMIT ?";
+        queryValues.push(limit);
+      }
+      const offsetVal = (page - 1) * limit;
+      sql += " OFFSET ?";
+      sql += ";";
+      queryValues.push(offsetVal);
+
+      // Execute query
+      const [results] = await this.connection.query(sql, queryValues);
+
+      // Return paginated results
+      const resultSet = {
+        docs: results || [],
+        totalDocs: results ? results.length : 0,
+        totalPages: 0,
+        page: 0,
+      };
+
+      return resultSet;
+    } catch (error) {
+      logEvent(error.sql, "sql_error.md");
+      throw new Error("method-> customQueryPaginate: " + error.message);
     }
   }
 }

@@ -29,18 +29,21 @@ const loginController = async (req, res) => {
           displayName: `${user.firstname} ${user.lastname}`,
           roles: roles,
           id: user.id,
+          isLocked: user.isLocked,
+          verified: user.verified,
         },
         sub: user.id,
       },
       process.env.JWT_SECRET,
       // it should expire in the next 12 hours
-      { expiresIn: "6h" }
+      { expiresIn: "2h" }
     );
     await req.db.updateOne(
       "users",
       { id: user.id },
       { lastloginDate: format(new Date(), "yyyy-MM-dd HH:mm:ss") }
     );
+    req.io.emit("login", { userId: user.id });
     res.status(200).json({
       msg: `Successfully signed in as ${user.firstname}`,
       accessToken,

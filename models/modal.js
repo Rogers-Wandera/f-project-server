@@ -3,6 +3,14 @@ class Model {
     this.table = null;
     this.id = null;
     this.db = dbinstance;
+    this.limit = 10;
+    this.page = 1;
+    this.sortBy = [{ id: "id", desc: true }];
+    this.conditions = {
+      isActive: 1,
+    };
+    this.filters = [];
+    this.globalFilter = null;
   }
 
   attributes() {
@@ -13,7 +21,14 @@ class Model {
         typeof this[key] !== "function" &&
         key !== "table" &&
         key !== "id" &&
-        key !== "db"
+        key !== "db" &&
+        key !== "limit" &&
+        key !== "page" &&
+        key !== "sortBy" &&
+        key !== "sortOrder" &&
+        key !== "conditions" &&
+        key !== "filters" &&
+        key !== "globalFilter"
       ) {
         if (this[key] !== null && this[key] !== undefined) {
           attributes[key] = this[key];
@@ -74,7 +89,7 @@ class Model {
     }
   }
 
-  async __delete() {
+  async __delete(idfield = "id") {
     try {
       if (!this.table) {
         throw new Error("Table name is required");
@@ -83,7 +98,9 @@ class Model {
         throw new Error("Id is required");
       }
       await this.__find();
-      const result = await this.db.softDelete(this.table, this.id);
+      const result = await this.db.softDelete(this.table, {
+        [idfield]: this.id,
+      });
       return result;
     } catch (error) {
       throw new Error("method-> __delete: " + error.message);
@@ -94,9 +111,15 @@ class Model {
       if (!this.table) {
         throw new Error("Table name is required");
       }
-      const data = await this.db.findPaginate(this.table, 10, 1, "id", "desc", {
-        isActive: 1,
-      });
+      const data = await this.db.findPaginate(
+        this.table,
+        this.limit,
+        this.page,
+        this.sortBy.length > 0 ? this.sortBy : [{ id: "id", desc: true }],
+        this.conditions,
+        this.filters,
+        this.globalFilter
+      );
       return data;
     } catch (error) {
       throw new Error("method-> __viewdata: " + error.message);
@@ -155,6 +178,26 @@ class Model {
       return data;
     } catch (error) {
       throw new Error("method-> __findcriteria: " + error.message);
+    }
+  }
+
+  async __viewCustomQueryPaginate(query = null, params = []) {
+    try {
+      if (!query) {
+        throw new Error("Query is required");
+      }
+      const data = await this.db.customQueryPaginate(
+        query,
+        params,
+        this.limit,
+        this.page,
+        this.sortBy.length > 0 ? this.sortBy : [{ id: "id", desc: true }],
+        this.filters,
+        this.globalFilter
+      );
+      return data;
+    } catch (error) {
+      throw new Error("method-> __viewCustomQueryPaginate: " + error.message);
     }
   }
 }

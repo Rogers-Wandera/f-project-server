@@ -1,6 +1,5 @@
 const userdetails = async (req, res) => {
   try {
-    console.log(req.user);
     const userdetails = await req.db.FindSelectiveOne(
       "users",
       {

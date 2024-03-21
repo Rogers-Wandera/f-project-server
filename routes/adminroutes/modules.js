@@ -12,6 +12,7 @@ const {
   AddModuleLinks,
   UpdateModuleLinks,
   DeleteModuleLinks,
+  GetModuleLinks,
 } = require("../../controllers/admin/admincontrollers");
 const { validateSchema } = require("../../middlewares/validationAuth");
 const {
@@ -49,10 +50,11 @@ router
     VerifyRoles(USER_ROLES.Admin),
     validateSchema(modulelinksschema),
     AddModuleLinks
-  );
+  )
+  .get(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), GetModuleLinks);
 
 router
-  .route("/links/:moduleId/:linkID")
+  .route("/links/:moduleId/:linkId")
   .patch(
     VerifyJwt,
     VerifyEmail,

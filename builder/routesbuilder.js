@@ -82,15 +82,18 @@ const RoutesContent = (
 const appendRoute = (routemainname, tablename, folder = null) => {
   try {
     let filexists = `${tablename}route.js`;
-    let routerpath = `./routes/${filexists}`;
+    let routerpath = `./${filexists}`;
     if (folder !== null) {
-      routerpath = `./routes/${folder}/${filexists}`;
+      routerpath = `./${folder}/${filexists}`;
     }
     let classname = tablename.charAt(0).toUpperCase() + tablename.slice(1);
-    let newroute = "app.use(`${base_url}/";
+    let newroute = "router.use(`/";
     newroute += routemainname + "`, " + classname + "Router);";
 
-    let data = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
+    let data = fs.readFileSync(
+      path.join(__dirname, "..", "routes", "index.js"),
+      "utf8"
+    );
     let lines = data.split("\n");
     const index = lines.findIndex((line) => line.includes("//end of routes"));
     if (index !== -1) {
@@ -98,7 +101,10 @@ const appendRoute = (routemainname, tablename, folder = null) => {
       if (!findlineexists) {
         lines.splice(index, 0, newroute);
         const text = lines.join("\n");
-        fs.writeFileSync(path.join(__dirname, "..", "app.js"), text);
+        fs.writeFileSync(
+          path.join(__dirname, "..", "routes", "index.js"),
+          text
+        );
       }
     }
   } catch (error) {
@@ -109,13 +115,16 @@ const appendRoute = (routemainname, tablename, folder = null) => {
 const appendImport = (tablename, folder = null) => {
   try {
     let filexists = `${tablename}route.js`;
-    let routerpath = `./routes/${filexists}`;
+    let routerpath = `./${filexists}`;
     if (folder !== null) {
-      routerpath = `./routes/${folder}/${filexists}`;
+      routerpath = `./${folder}/${filexists}`;
     }
     let classname = tablename.charAt(0).toUpperCase() + tablename.slice(1);
 
-    let data = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
+    let data = fs.readFileSync(
+      path.join(__dirname, "..", "routes", "index.js"),
+      "utf8"
+    );
     let lines = data.split("\n");
     const routesindex = lines.findIndex((line) =>
       line.includes("// end of routes imports")
@@ -131,7 +140,10 @@ const appendImport = (tablename, folder = null) => {
           `const ${classname}Router = require("${routerpath}")`
         );
         const text = lines.join("\n");
-        fs.writeFileSync(path.join(__dirname, "..", "app.js"), text);
+        fs.writeFileSync(
+          path.join(__dirname, "..", "routes", "index.js"),
+          text
+        );
       }
     }
   } catch (error) {

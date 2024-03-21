@@ -1,6 +1,5 @@
 const { format } = require("date-fns");
 const Model = require("./modal");
-const Modules = require("./modulesmodel");
 class ModuleLinks extends Model {
   constructor(dbinstance = null) {
     super();
@@ -64,17 +63,14 @@ class ModuleLinks extends Model {
         );
       } else {
         const query =
-          "Select *from ?? where ?? = ? and isActive = 1 and ?? != ? and ?? = ?";
+          "Select *from ?? where linkname = ? and isActive = 1 and id != ? and moduleId = ?";
         const [rows] = await this.db.executeQuery(query, [
           this.table,
-          "linkname",
           this.linkname,
-          "id",
           this.id,
-          "moduleId",
           this.moduleId,
         ]);
-        if (rows.length > 0) {
+        if (rows?.length > 0) {
           exists = rows[0];
         }
       }
@@ -199,6 +195,16 @@ class ModuleLinks extends Model {
         return { success: true };
       }
       return { success: false };
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async ViewModuleLinks() {
+    try {
+      const query = `SELECT *FROM vw_module_links WHERE moduleId = ?;`;
+      const data = await this.__viewCustomQueryPaginate(query, [this.moduleId]);
+      return data;
     } catch (error) {
       throw new Error(error);
     }

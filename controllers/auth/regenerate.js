@@ -40,7 +40,7 @@ const regenerateToken = async (req, res) => {
     if (user.verified == 1) {
       errordata.message = "Already verified account";
       errordata.text = "Go to";
-      errordata.link = "#";
+      errordata.link = ``;
       errordata.linktext = "Home";
       const page = ejs.render(errorPage, errordata);
       return res.status(401).send(page);
