@@ -306,11 +306,13 @@ const UploadAudio = async (req, res) => {
 const AddModules = async (req, res) => {
   try {
     const modulesobj = new Modules(req.db);
-    const { name, position } = req.body;
+    const { name } = req.body;
     modulesobj.Name = name;
-    modulesobj.Position = position;
     modulesobj.IsActive = 1;
     modulesobj.CreationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+    const position = await modulesobj.CalculateNextPosition();
+    console.log(position);
+    modulesobj.Position = position;
     const results = await modulesobj.AddModules();
     if (results.success) {
       return res.status(200).json({ msg: "Module added successfully" });
@@ -372,7 +374,7 @@ const GetModules = async (req, res) => {
 
 const AddModuleLinks = async (req, res) => {
   try {
-    const { linkname, route, position } = req.body;
+    const { linkname, route } = req.body;
     const { moduleId } = req.params;
     const modules = new Modules(req.db);
     const modulelinks = new ModuleLinks(req.db);
@@ -381,6 +383,7 @@ const AddModuleLinks = async (req, res) => {
     modulelinks.ModuleId = moduleId;
     modulelinks.LinkName = linkname;
     modulelinks.Route = route;
+    const position = await modulelinks.CalculateNextPosition(moduleId);
     modulelinks.Position = position;
     const response = await modulelinks.AddLink();
     if (response?.success === false) {
@@ -450,6 +453,17 @@ const GetModuleLinks = async (req, res) => {
   }
 };
 
+const GetLastModuleLinkPosition = async (req, res) => {
+  try {
+    const { moduleId } = req.params;
+    const modulelinks = new ModuleLinks(req.db);
+    const data = await modulelinks.CalculateNextPosition(moduleId);
+    res.status(200).json({ data });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 module.exports = {
   AddRoles,
   CreateTable,
@@ -469,4 +483,5 @@ module.exports = {
   UpdateModuleLinks,
   DeleteModuleLinks,
   GetModuleLinks,
+  GetLastModuleLinkPosition,
 };
