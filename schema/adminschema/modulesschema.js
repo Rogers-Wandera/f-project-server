@@ -8,9 +8,8 @@ const ModulesSchema = joi.object({
     "string.min": "Module name must be at least {#limit} characters",
     "string.max": "Module name must be at most {#limit} characters",
   }),
-  position: joi.number().optional().positive().messages({
+  position: joi.number().optional().messages({
     "number.base": "Position must be a number",
-    "number.positive": "Position must be a positive number",
   }),
 });
 
@@ -29,15 +28,17 @@ const modulelinksschema = joi.object({
     "string.min": "Link name must be at least {#limit} characters",
     "string.max": "Link name must be at most {#limit} characters",
   }),
-  position: joi.number().optional().positive().messages({
+  position: joi.number().optional().messages({
     "number.base": "Position must be a number",
-    "number.positive": "Position must be a positive number",
   }),
   route: joi.string().required().min(3).max(200).messages({
     "string.empty": "Route is required",
     "any.required": "Route is required",
     "string.min": "Route must be at least {#limit} characters",
     "string.max": "Route must be at most {#limit} characters",
+  }),
+  released: joi.number().optional().messages({
+    "number.base": "Released must be a number",
   }),
 });
 

@@ -99,55 +99,64 @@ class ModuleLinks extends Model {
   }
 
   async handlePosition(action = "add") {
-    if (action == "add") {
-      let position = 1;
-      const lastposition = await this.db.countFieldCriteria(
-        this.table,
-        "position"
-      );
-      if (lastposition?.pos !== null) {
-        position = lastposition.pos + 1;
-      }
-      if (this.position) {
-        const findposition = await this.db.findByConditions(this.table, {
-          position: this.position,
-        });
-        if (findposition.length > 0) {
-          const id = findposition[0].id;
-          const pos = findposition[0].position;
-          await this.db.updateOne(
-            this.table,
-            { id: id },
-            { position: position }
-          );
-          position = pos;
+    try {
+      if (action == "add") {
+        let position = 1;
+        const lastposition = await this.db.countFieldCriteria(
+          this.table,
+          "position"
+        );
+        if (lastposition?.pos !== null) {
+          position = lastposition.pos + 1;
         }
-      }
-      this.position = position;
-    } else {
-      let position = 0;
-      const module = await this.__find();
-      position = module[0].position;
-      if (this.position) {
-        const findposition = await this.db.findByConditions(this.table, {
-          position: this.position,
-        });
-        if (findposition.length <= 0) {
+        if (this.position) {
+          const findposition = await this.db.findByConditions(this.table, {
+            position: this.position,
+          });
+          if (findposition.length > 0) {
+            const id = findposition[0].id;
+            const pos = findposition[0].position;
+            await this.db.updateOne(
+              this.table,
+              { id: id },
+              { position: position }
+            );
+            position = pos;
+          }
+        }
+        this.position = position;
+      } else {
+        let position = 0;
+        const findExists = await this.__viewOne();
+        if (!findExists) {
+          throw new Error("Module Link does not exist");
+        }
+        position = findExists.position;
+        const sql =
+          "SELECT *FROM modulelinks WHERE isActive = 1 AND moduleId = ? AND position = ?;";
+        const response = await this.db.executeQuery(sql, [
+          this.moduleId,
+          this.position,
+        ]);
+        if (response.length <= 0) {
           throw new Error("The position you want to replace to does not exist");
         }
-        if (this.position == findposition[0].position) {
-          throw new Error("The position you want to replace to is same");
+        if (this.position == position) {
+          this.position = position;
+          return;
         }
-        if (findposition.length > 0) {
-          const id = findposition[0].id;
-          await this.db.updateOne(
-            this.table,
-            { id: id },
-            { position: position }
-          );
-        }
+        const newId = response[0].id;
+        const newposition = position;
+        const update = await this.db.findOneAndUpdate(
+          this.table,
+          { id: newId, isActive: 1 },
+          { position: newposition }
+        );
+        this.position = response[0].position;
+        return update;
       }
-      this.position = position;
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -177,7 +186,7 @@ class ModuleLinks extends Model {
       if (exists) {
         throw new Error("Link with that name already exist");
       }
-      await this.handlePosition();
+      await this.handlePosition("update");
       const results = await this.__update();
       if (results == true) {
         return { success: true };
@@ -205,6 +214,23 @@ class ModuleLinks extends Model {
       const query = `SELECT *FROM vw_module_links WHERE moduleId = ?;`;
       const data = await this.__viewCustomQueryPaginate(query, [this.moduleId]);
       return data;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async CalculateNextPosition(moduleId) {
+    try {
+      const data = await this.db.findByConditions(this.table, {
+        moduleId: moduleId,
+      });
+      let lastposition = 1;
+      if (data.length > 0) {
+        const lastitem = data[data.length - 1];
+        const lastpos = lastitem.position;
+        lastposition = lastpos + 1;
+      }
+      return lastposition;
     } catch (error) {
       throw new Error(error);
     }

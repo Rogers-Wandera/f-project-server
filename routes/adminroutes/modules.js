@@ -13,6 +13,7 @@ const {
   UpdateModuleLinks,
   DeleteModuleLinks,
   GetModuleLinks,
+  GetLastModuleLinkPosition,
 } = require("../../controllers/admin/admincontrollers");
 const { validateSchema } = require("../../middlewares/validationAuth");
 const {
@@ -26,7 +27,7 @@ router
   .post(
     VerifyJwt,
     VerifyEmail,
-    VerifyRoles(USER_ROLES.Admin),
+    VerifyRoles(USER_ROLES.Programmer),
     validateSchema(ModulesSchema),
     AddModules
   );
@@ -35,11 +36,16 @@ router
   .patch(
     VerifyJwt,
     VerifyEmail,
-    VerifyRoles(USER_ROLES.Admin),
+    VerifyRoles(USER_ROLES.Programmer, USER_ROLES.Admin),
     validateSchema(ModulesSchema),
     EditModules
   )
-  .delete(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), RemoveModules);
+  .delete(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Programmer),
+    RemoveModules
+  );
 
 // module links
 router
@@ -47,26 +53,40 @@ router
   .post(
     VerifyJwt,
     VerifyEmail,
-    VerifyRoles(USER_ROLES.Admin),
+    VerifyRoles(USER_ROLES.Programmer),
     validateSchema(modulelinksschema),
     AddModuleLinks
   )
-  .get(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), GetModuleLinks);
+  .get(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin, USER_ROLES.Programmer),
+    GetModuleLinks
+  );
 
 router
   .route("/links/:moduleId/:linkId")
   .patch(
     VerifyJwt,
     VerifyEmail,
-    VerifyRoles(USER_ROLES.Admin),
+    VerifyRoles(USER_ROLES.Admin, USER_ROLES.Programmer),
     validateSchema(modulelinksschema),
     UpdateModuleLinks
   )
   .delete(
     VerifyJwt,
     VerifyEmail,
-    VerifyRoles(USER_ROLES.Admin),
+    VerifyRoles(USER_ROLES.Programmer),
     DeleteModuleLinks
+  );
+
+router
+  .route("/links/position/:moduleId")
+  .get(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin, USER_ROLES.Programmer),
+    GetLastModuleLinkPosition
   );
 
 module.exports = router;

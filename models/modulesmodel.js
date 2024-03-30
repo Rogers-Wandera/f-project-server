@@ -183,6 +183,21 @@ class Modules extends Model {
       throw new Error(error);
     }
   }
+
+  async CalculateNextPosition() {
+    try {
+      const data = await this.db.findAll(this.table);
+      let lastposition = 1;
+      if (data.length > 0) {
+        const lastitem = data[data.length - 1];
+        const lastpos = lastitem.position;
+        lastposition = lastpos + 1;
+      }
+      return lastposition;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 }
 
 module.exports = Modules;
