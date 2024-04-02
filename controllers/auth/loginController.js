@@ -31,6 +31,8 @@ const loginController = async (req, res) => {
           id: user.id,
           isLocked: user.isLocked,
           verified: user.verified,
+          adminCreated: user.adminCreated,
+          position: user.position,
         },
         sub: user.id,
       },

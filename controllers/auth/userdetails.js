@@ -1,3 +1,5 @@
+const UserModel = require("../../models/users");
+
 const userdetails = async (req, res) => {
   try {
     const userdetails = await req.db.FindSelectiveOne(
@@ -13,4 +15,20 @@ const userdetails = async (req, res) => {
   }
 };
 
-module.exports = { userdetails };
+const getUsers = async (req, res) => {
+  try {
+    const { start, size, filters, globalFilter, sorting } = req.query;
+    const userobj = new UserModel(req.db);
+    userobj.page = parseInt(start);
+    userobj.limit = parseInt(size);
+    userobj.filters = JSON.parse(filters);
+    userobj.globalFilter = globalFilter;
+    userobj.sortBy = JSON.parse(sorting);
+    const data = await userobj.ViewUsers();
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+module.exports = { userdetails, getUsers };
