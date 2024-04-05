@@ -11,13 +11,6 @@ const relationshipSchema = joi.object({
   }),
 });
 
-const customValidation = (value, helpers) => {
-  if (value === null || value === undefined || value === "") {
-    return null;
-  }
-  return value;
-};
-
 const assignrolesschema = joi.object({
   userId: joi.string().required().messages({
     "string.empty": "UserId cannot be empty",

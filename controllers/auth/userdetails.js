@@ -31,4 +31,19 @@ const getUsers = async (req, res) => {
   }
 };
 
-module.exports = { userdetails, getUsers };
+const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const userobj = new UserModel(req.db);
+    userobj.Id = userId;
+    const data = await userobj.__delete();
+    if (data == false) {
+      return res.status(400).json({ msg: "something went wrong" });
+    }
+    res.status(200).json({ msg: "user deleted successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+module.exports = { userdetails, getUsers, deleteUser };

@@ -3,8 +3,7 @@ const express = require("express");
 require("express-async-errors");
 const cors = require("cors");
 const http = require("http");
-const Connection = require("./conn/conn");
-const { dbConfig } = require("./conn/configs");
+const Connection = require("./conn/connection/extenderbuilder");
 const notFound = require("./errorHandler/notfound");
 const errorHandler = require("./errorHandler/errorHandler");
 const { logger } = require("./middlewares/logs");
@@ -27,7 +26,7 @@ app.use(logger);
 app.use(credentials);
 app.use(cors(corsOptions));
 
-const database = new Connection(dbConfig);
+const database = new Connection();
 // const fileupload = new FileUploader();
 const base_url = process.env.BASE_API;
 app.use(express.json());

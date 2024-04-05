@@ -33,6 +33,10 @@ const Register = async (req, res) => {
       password: hashedPassword,
       email,
       createdAt,
+      adminCreated,
+      gender,
+      tel,
+      positionId: position,
       isLocked: 0,
       isActive: 1,
     };

@@ -71,7 +71,6 @@ const HandleExpiredLinkRoles = async (io, database) => {
       });
     }
   } catch (error) {
-    console.log(error);
     throw new Error(error);
   }
 };
