@@ -5,7 +5,7 @@ const userRoles = require("../../conn/rolesList");
 const loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await req.db.findOne("users", { email });
+    const user = await req.db.findOne("usersdata", { email });
     if (!user) {
       return res.status(401).json({ msg: `No user with ${email} found` });
     }
@@ -31,6 +31,8 @@ const loginController = async (req, res) => {
           id: user.id,
           isLocked: user.isLocked,
           verified: user.verified,
+          adminCreated: user.adminCreated,
+          position: user.position,
         },
         sub: user.id,
       },

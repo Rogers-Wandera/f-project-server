@@ -191,4 +191,5 @@ module.exports = {
   PersonImageMetaQueryParams,
   PersonAudioSchema,
   PersonAudioParams,
+  imagesArray,
 };

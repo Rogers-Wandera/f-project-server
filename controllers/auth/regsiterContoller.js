@@ -6,7 +6,16 @@ const { addHours } = require("date-fns");
 
 const Register = async (req, res) => {
   try {
-    const { email, firstname, lastname, password } = req.body;
+    const {
+      email,
+      firstname,
+      lastname,
+      password,
+      adminCreated,
+      gender,
+      tel,
+      position,
+    } = req.body;
     const users = await req.db.findOne("users", { email: email });
     if (users) {
       return res.status(401).json({ msg: `User with ${email} already exists` });
@@ -24,6 +33,10 @@ const Register = async (req, res) => {
       password: hashedPassword,
       email,
       createdAt,
+      adminCreated,
+      gender,
+      tel,
+      positionId: position,
       isLocked: 0,
       isActive: 1,
     };

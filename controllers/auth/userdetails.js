@@ -1,3 +1,5 @@
+const UserModel = require("../../models/users");
+
 const userdetails = async (req, res) => {
   try {
     const userdetails = await req.db.FindSelectiveOne(
@@ -13,4 +15,35 @@ const userdetails = async (req, res) => {
   }
 };
 
-module.exports = { userdetails };
+const getUsers = async (req, res) => {
+  try {
+    const { start, size, filters, globalFilter, sorting } = req.query;
+    const userobj = new UserModel(req.db);
+    userobj.page = parseInt(start);
+    userobj.limit = parseInt(size);
+    userobj.filters = JSON.parse(filters);
+    userobj.globalFilter = globalFilter;
+    userobj.sortBy = JSON.parse(sorting);
+    const data = await userobj.ViewUsers();
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const userobj = new UserModel(req.db);
+    userobj.Id = userId;
+    const data = await userobj.__delete();
+    if (data == false) {
+      return res.status(400).json({ msg: "something went wrong" });
+    }
+    res.status(200).json({ msg: "user deleted successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+module.exports = { userdetails, getUsers, deleteUser };

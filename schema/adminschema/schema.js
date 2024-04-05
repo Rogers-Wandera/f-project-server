@@ -1,4 +1,4 @@
-const joi = require("joi");
+const joi = require("joi").extend(require("@joi/date"));
 
 const relationshipSchema = joi.object({
   tablename: joi.string().required().messages({
@@ -9,6 +9,33 @@ const relationshipSchema = joi.object({
     "string.empty": "Column name cannot be empty",
     "any.required": "Column name is required",
   }),
+});
+
+const assignrolesschema = joi.object({
+  userId: joi.string().required().messages({
+    "string.empty": "UserId cannot be empty",
+    "any.required": "UserId is required",
+  }),
+  expireDate: joi
+    .alternatives()
+    .try(
+      joi
+        .date()
+        .required()
+        .format("YYYY-MM-DD HH:mm")
+        .min(new Date())
+        .messages({
+          "any.required": "expireDate is required",
+          "date.format": "expireDate must be in format YYYY-MM-DD HH:mm",
+          "date.base": "expireDate must be a date",
+          "date.min": "expireDate must be greater than or equal to now",
+        }),
+      joi.allow(null).messages({
+        "any.allowOnly": "Exipre Date is required",
+        "any.required": "Exipre Date is required",
+      })
+    )
+    .messages({}),
 });
 
 // const saveSchema = joi.object({
@@ -172,7 +199,7 @@ const createTableSchema = joi.object({
     "string.empty": "Schema folder is required",
     "any.required": "Schema folder is required",
   }),
-  routemainname: joi.string().required().required().messages({
+  routemainname: joi.string().required().messages({
     "string.empty": "Route main name is required",
     "any.required": "Route main name is required",
   }),
@@ -180,6 +207,23 @@ const createTableSchema = joi.object({
     "any.unknown": "Unknown property",
     "any.required": "Boiler functions are required",
   }),
+  modulecreation: {
+    moduleId: joi.number().required().messages({
+      "any.required": "moduleId is required",
+      "number.base": "moduleId must be a number",
+    }),
+    linkname: joi.string().required().messages({
+      "string.empty": "Link name is required",
+      "any.required": "Link name is required",
+    }),
+    route: joi.string().required().messages({
+      "string.empty": "Route is required",
+      "any.required": "Route is required",
+    }),
+    assignroles: joi.array().items(assignrolesschema).optional().messages({
+      "any.required": "Methods are required",
+    }),
+  },
 });
 
 const AddRoleSchema = joi.object({

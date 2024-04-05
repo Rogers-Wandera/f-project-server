@@ -1,4 +1,20 @@
 const joi = require("joi");
+const prefixes = ["+256", "+254", "+255"];
+
+const customValidation = (value, helpers) => {
+  if (typeof value !== "string") {
+    return helpers.message('"value" must be a string');
+  }
+  const startsWithPrefix = prefixes.some((prefix) => value.startsWith(prefix));
+  if (!startsWithPrefix) {
+    return helpers.message(
+      `"value" must start with one of the following prefixes: ${prefixes.join(
+        ", "
+      )}`
+    );
+  }
+  return value;
+};
 
 const RegistrationSchema = joi.object({
   firstname: joi.string().alphanum().min(3).max(30).required().messages({
@@ -26,6 +42,30 @@ const RegistrationSchema = joi.object({
       "any.required": "Email is required",
       "string.empty": "Email is required",
     }),
+  adminCreated: joi.alternatives().try(
+    joi.number().required().messages({
+      "number.base": "Admin created must be a number",
+      "any.required": "Admin created is required",
+    }),
+    joi.allow(null).messages({
+      "any.allowOnly": "Admin created is required",
+      "any.required": "Admin created is required",
+    })
+  ),
+  gender: joi.string().valid("Male", "Female").required().messages({
+    "string.empty": "Gender cannot be empty",
+    "any.required": "Gender is required",
+    "any.only": "Gender must be Male or Female",
+  }),
+  tel: joi.string().required().custom(customValidation).messages({
+    "string.empty": "Telephone number cannot be empty",
+    "any.required": "Telephone number is required",
+  }),
+  position: joi.number().required().positive().messages({
+    "any.required": "Position is required.",
+    "number.base": "Position must be a number",
+    "number.positive": "Position must be greater than or equal to 1",
+  }),
   password: joi
     .string()
     .pattern(new RegExp(/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[a-zA-Z\d]).{6,}$/))

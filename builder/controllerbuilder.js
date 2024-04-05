@@ -57,6 +57,7 @@ const ControllerContent = (columns = [], tablename, folder = null) => {
         const { ${queryname}Id } = req.params;
         const ${tablename} = new ${classname}(req.db);
         ${tablename}.Id = ${queryname}Id;
+        ${tablename}.deletedBy = req.user.id;
         const results = await ${tablename}.Delete${classname}();
         if(results?.success == false) {
           return res.status(400).json({msg: "something went wrong"});
@@ -69,9 +70,15 @@ const ControllerContent = (columns = [], tablename, folder = null) => {
 
     const viewdata = `const View${classname} = async (req,res) => {
       try {
+        const { start, size, filters, globalFilter, sorting } = req.query;
         const ${tablename} = new ${classname}(req.db);
+        ${tablename}.page = parseInt(start);
+        ${tablename}.limit = parseInt(size);
+        ${tablename}.filters = JSON.parse(filters);
+        ${tablename}.globalFilter = globalFilter;
+        ${tablename}.sortBy = JSON.parse(sorting);
         const data = await ${tablename}.View${classname}();
-        res.status(200).json({ data: data });
+        res.status(200).json(data);
       } catch (error) {
         res.status(400).json({error: error.message})
       }
@@ -83,7 +90,7 @@ const ControllerContent = (columns = [], tablename, folder = null) => {
         const ${tablename} = new ${classname}(req.db);
         ${tablename}.Id = ${queryname}Id;
         const data = await ${tablename}.ViewSingle${classname}();
-        res.status(200).json({ data: data });
+        res.status(200).json(data);
       } catch (error) {
         res.status(400).json({error: error.message})
       }

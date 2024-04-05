@@ -238,12 +238,25 @@ const CreateTable = async (req, res) => {
       schemafolder,
       routemainname,
       boilerfunctions,
+      modulecreation,
     } = req.body;
+    const modulesobj = new Modules(req.db);
+    const modulelinks = new ModuleLinks(req.db);
+    if (modulecreation) {
+      modulesobj.Id = modulecreation.moduleId;
+      modulelinks.linkname = modulecreation.linkname;
+      await modulesobj.__find();
+      const linkexists = await modulelinks.findLinkByName();
+      if (linkexists) {
+        throw new Error("The linkname already exists");
+      }
+    }
     const result = await req.db.createTable(tablename, columns);
     let createclass = false;
     let schema = false;
     let controller = false;
     let routes = false;
+    let modules = false;
     if (result) {
       createclass = await CreateModelClass(columns, tablename, boilerfunctions);
       schema = await CreateSchema(columns, tablename, schemafolder);
@@ -260,12 +273,41 @@ const CreateTable = async (req, res) => {
         routemainname
       );
     }
+    if (modulecreation) {
+      modulesobj.Id = modulecreation.moduleId;
+      modulelinks.ModuleId = modulecreation.moduleId;
+      modulelinks.LinkName = modulecreation.linkname;
+      modulelinks.Route = modulecreation.route;
+      const position = await modulelinks.CalculateNextPosition(
+        modulecreation.moduleId
+      );
+      modulelinks.Position = position;
+      const res = await modulelinks.AddLink();
+      if (res.success) {
+        if (modulecreation.assignroles.length > 0) {
+          const senddata = [];
+          modulecreation.assignroles.forEach((role) => {
+            senddata.push({
+              linkId: res.insertId,
+              userId: role.userId,
+              expireDate: role.expireDate,
+              isActive: 1,
+              createdBy: req.user.id,
+              creationDate: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+            });
+          });
+          await req.db.insertMany("linkroles", senddata);
+          modules = true;
+        }
+      }
+    }
     res.status(200).json({
       result: result,
       createclass: createclass,
       schema: schema,
       controller: controller,
       routes: routes,
+      modules: modules,
     });
   } catch (error) {
     await req.db.executeQuery(`DROP TABLE IF EXISTS ${req.body.tablename}`);
@@ -311,7 +353,6 @@ const AddModules = async (req, res) => {
     modulesobj.IsActive = 1;
     modulesobj.CreationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
     const position = await modulesobj.CalculateNextPosition();
-    console.log(position);
     modulesobj.Position = position;
     const results = await modulesobj.AddModules();
     if (results.success) {

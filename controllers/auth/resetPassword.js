@@ -107,11 +107,17 @@ const resetUserPassword = async (req, res) => {
       return res.status(401).json({ msg: `No user found` });
     }
     const { password } = req.body;
+    let admincreated = null;
+    if (user.adminCreated === 1) {
+      admincreated = 0;
+    } else if (user.adminCreated === 0) {
+      admincreated = 0;
+    }
     const hashedpassword = await bcryptjs.hash(password, 10);
     const response = await req.db.updateOne(
       "users",
       { id: userId },
-      { password: hashedpassword }
+      { password: hashedpassword, adminCreated: admincreated }
     );
     if (!response) {
       return res.status(500).json({ msg: "Something went wrong try again" });

@@ -12,6 +12,8 @@ const UserRoute = require("./auth/userroute");
 const ModulesRouter = require("./adminroutes/modules");
 const LoginRoute = require("./auth/loginroute");
 const LinkrolesRouter = require("./adminroutes/linkrolesroute.js");
+const PositionsRouter = require("./adminroutes/positionsroute.js");
+const UserprofileimagesRouter = require("./auth/userprofileimagesroute.js")
 // end of routes imports
 
 const router = require("express").Router();
@@ -30,6 +32,8 @@ router.use(`/person/audio`, PersonAudioRoute);
 router.use(`/user`, UserRoute);
 router.use(`/modules`, ModulesRouter);
 router.use(`/modules/linkroles`, LinkrolesRouter);
+router.use(`/positions`, PositionsRouter);
+router.use(`/userprofiles`, UserprofileimagesRouter);
 //end of routes
 
 module.exports = router;
