@@ -415,7 +415,7 @@ const GetModules = async (req, res) => {
 
 const AddModuleLinks = async (req, res) => {
   try {
-    const { linkname, route } = req.body;
+    const { linkname, route, render } = req.body;
     const { moduleId } = req.params;
     const modules = new Modules(req.db);
     const modulelinks = new ModuleLinks(req.db);
@@ -423,6 +423,7 @@ const AddModuleLinks = async (req, res) => {
     await modules.__find();
     modulelinks.ModuleId = moduleId;
     modulelinks.LinkName = linkname;
+    modulelinks.Render = render;
     modulelinks.Route = route;
     const position = await modulelinks.CalculateNextPosition(moduleId);
     modulelinks.Position = position;
@@ -438,7 +439,7 @@ const AddModuleLinks = async (req, res) => {
 
 const UpdateModuleLinks = async (req, res) => {
   try {
-    const { linkname, route, position } = req.body;
+    const { linkname, route, position, render } = req.body;
     const { moduleId, linkId } = req.params;
     const modules = new Modules(req.db);
     const modulelinks = new ModuleLinks(req.db);
@@ -449,6 +450,7 @@ const UpdateModuleLinks = async (req, res) => {
     modulelinks.ModuleId = moduleId;
     modulelinks.LinkName = linkname;
     modulelinks.Route = route;
+    modulelinks.Render = render;
     modulelinks.Position = position;
     const response = await modulelinks.UpdateLink();
     if (response?.success === false) {

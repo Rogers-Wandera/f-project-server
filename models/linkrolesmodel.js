@@ -211,6 +211,7 @@ class Linkroles extends Model {
             linkname: item.linkname,
             route: item.route,
             expired: item.expired,
+            render: item.render,
           });
           return acc;
         }, {});

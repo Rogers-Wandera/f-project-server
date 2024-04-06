@@ -12,6 +12,7 @@ class ModuleLinks extends Model {
     this.deleted_at = null;
     this.creationDate = null;
     this.isActive = null;
+    this.render = null;
     this.db = dbinstance;
   }
 
@@ -31,6 +32,10 @@ class ModuleLinks extends Model {
   get Position() {
     return this.position;
   }
+
+  get Render() {
+    return this.render;
+  }
   //   setters
   set Id(id) {
     this.id = id;
@@ -46,6 +51,10 @@ class ModuleLinks extends Model {
   }
   set Position(position) {
     this.position = position;
+  }
+
+  set Render(render) {
+    this.render = render;
   }
 
   async findLinkByName(active = 1, action = "add") {

@@ -40,6 +40,10 @@ const modulelinksschema = joi.object({
   released: joi.number().optional().messages({
     "number.base": "Released must be a number",
   }),
+  render: joi.number().required().messages({
+    "any.required": "Render is required",
+    "number.base": "Render must be a number",
+  }),
 });
 
 module.exports = { ModulesSchema, queryparams, modulelinksschema };

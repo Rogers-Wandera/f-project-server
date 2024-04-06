@@ -47,16 +47,16 @@ const VerifyRoles = (...allowedRoles) => {
         // check if the role has expired
         expired = checkExpireDate(urlExists.expireTime);
         if (expired) {
-          return res
-            .status(401)
-            .json({ msg: "Your access rights have expired contact admin" });
+          return res.status(401).json({
+            msg: "Your access rights have expired contact Authorized personel",
+          });
         }
       } else {
         // else we check
         if (!checkResults) {
-          return res
-            .status(401)
-            .json({ msg: "This is a protected Route. Contact Admin" });
+          return res.status(401).json({
+            msg: "This is a protected Route. Contact Authorized personel",
+          });
         }
       }
       // log the user and what he or she is accessing
