@@ -25,7 +25,14 @@ const getUsers = async (req, res) => {
     userobj.globalFilter = globalFilter;
     userobj.sortBy = JSON.parse(sorting);
     const data = await userobj.ViewUsers();
-    res.status(200).json(data);
+    let formatted = { page: 0, totalDocs: 0, totalPages: 0, docs: [] };
+    if (data.totalDocs > 0) {
+      formatted.docs = data.docs.map((item) => userobj.userData(item));
+      formatted.page = data.page;
+      formatted.totalDocs = data.totalDocs;
+      formatted.totalPages = data.totalPages;
+    }
+    res.status(200).json(formatted);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -46,4 +53,16 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { userdetails, getUsers, deleteUser };
+const GetSingleUserDetails = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const userobj = new UserModel(req.db);
+    userobj.Id = userId;
+    const data = await userobj.FindUser();
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+module.exports = { userdetails, getUsers, deleteUser, GetSingleUserDetails };

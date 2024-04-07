@@ -5,6 +5,7 @@ const {
   userdetails,
   getUsers,
   deleteUser,
+  GetSingleUserDetails,
 } = require("../../controllers/auth/userdetails");
 const VerifyEmail = require("../../middlewares/verifyEmail");
 const VerifyRoles = require("../../middlewares/verifyRoles");
@@ -22,5 +23,11 @@ router
 
 router
   .route("/users/:userId")
-  .delete(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), deleteUser);
+  .delete(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), deleteUser)
+  .get(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin),
+    GetSingleUserDetails
+  );
 module.exports = router;

@@ -36,6 +36,12 @@ class UserModel extends Model {
     }
   }
 
+  userData(user) {
+    user["email"] = null;
+    user["password"] = null;
+    return user;
+  }
+
   async FindUser() {
     try {
       if (!this.id) {
@@ -46,7 +52,7 @@ class UserModel extends Model {
       if (results.length <= 0) {
         throw new Error(`No ${this.table} found`);
       }
-      return results[0];
+      return this.userData(results[0]);
     } catch (error) {
       throw new Error("method-> FindUser: " + error.message);
     }

@@ -58,6 +58,7 @@ const AddRoles = async (req, res) => {
       return res.status(500).json({ error: "Something went wrong" });
     }
     res.status(200).json({ msg: "Role added successfully" });
+    req.io.emit("loguserout", { userId: userId });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -86,12 +87,13 @@ const RemoveRole = async (req, res) => {
     if (findRoleExists[0].rolename === "User") {
       return res.status(400).json({ error: "Cannot remove user role" });
     }
-    const result = await req.db.deleteOne("roles", {
+    const result = await req.db.softDelete("roles", {
       id: findRoleExists[0].id,
     });
     if (!result) {
       return res.status(500).json({ error: "Something went wrong" });
     }
+    req.io.emit("loguserout", { userId: userId });
     res.status(200).json({ msg: "Role removed successfully" });
   } catch (error) {
     res.status(400).json({ error: error.message });

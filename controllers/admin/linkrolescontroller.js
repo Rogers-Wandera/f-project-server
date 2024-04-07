@@ -82,6 +82,7 @@ const DeleteLinkroles = async (req, res) => {
 const getUserModules = async (req, res) => {
   try {
     const { id: userId } = req.user;
+    console.log(userId);
     const linkroles = new Linkroles(req.db);
     const data = await linkroles.getUserModules(userId);
     res.status(200).json(data);
