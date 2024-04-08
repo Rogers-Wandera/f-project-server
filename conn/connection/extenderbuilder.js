@@ -219,9 +219,29 @@ class ConnectionBuilder extends DBMethodsBuilder {
         throw new Error("Table and conditions are required or invalid");
       }
       const whereclause = Object.keys(conditions)
-        .map((column) => `${column} = ?`)
+        .map((column) => {
+          let clause = `${column} = ?`;
+          // check the condition if &ne
+          const clausecondition = conditions[column];
+          if (typeof clausecondition === "object") {
+            // check the condition if $ne
+            if (clausecondition?.$ne) {
+              clause = `${column} != ?`;
+            }
+          }
+          return clause;
+        })
         .join(" AND ");
-      const values = Object.values(conditions);
+      const values = Object.values(conditions).map((val) => {
+        let formattedval = val;
+        if (typeof val === "object") {
+          // check the condition if $ne
+          if (val?.$ne) {
+            formattedval = val.$ne;
+          }
+        }
+        return formattedval;
+      });
       const sql = `SELECT *FROM ?? WHERE ${whereclause}`;
       const [results] = await this.connection.query(sql, [table, ...values]);
       return results;

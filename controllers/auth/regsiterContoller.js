@@ -44,7 +44,11 @@ const Register = async (req, res) => {
     if (!result?.success) {
       return res.status(500).json({ msg: "Something went wrong try again" });
     }
-    const roles = { userId: userid, isActive: 1 };
+    const roles = {
+      userId: userid,
+      isActive: 1,
+      createdBy: req.user.id || "",
+    };
     const tokendb = {
       userId: userid,
       token: token,

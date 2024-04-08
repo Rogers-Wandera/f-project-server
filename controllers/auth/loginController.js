@@ -18,7 +18,7 @@ const loginController = async (req, res) => {
         .status(401)
         .json({ msg: "Your account is locked contact admin" });
     }
-    const dbroles = await req.db.findByConditions("roles", {
+    const dbroles = await req.db.findByConditions("user_roles", {
       userId: user.id,
       isActive: 1,
     });

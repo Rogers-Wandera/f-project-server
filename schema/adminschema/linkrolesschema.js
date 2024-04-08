@@ -12,17 +12,18 @@ const linkrolesSchema = joi.object({
     "string.max": "userId must be at most {#limit} characters",
     "string.min": "userId must be at least {#limit} characters",
   }),
-  expireDate: joi
-    .date()
-    .required()
-    .format("YYYY-MM-DD HH:mm")
-    .min(new Date())
-    .messages({
-      "any.required": "expireDate is required",
-      "date.format": "expireDate must be in format YYYY-MM-DD HH:mm",
-      "date.base": "expireDate must be a date",
-      "date.min": "expireDate must be greater than or equal to now",
+  expireDate: joi.alternatives().try(
+    joi.date().required().format("YYYY-MM-DD HH:mm").min(new Date()).messages({
+      "any.required": "Expire Date is required",
+      "date.format": "Expire Date must be in format YYYY-MM-DD HH:mm",
+      "date.base": "Expire Date must be a date",
+      "date.min": "Expire Date must be greater than or equal to now",
     }),
+    joi.allow(null).messages({
+      "any.allowOnly": "Exipre Date is required",
+      "any.required": "Exipre Date is required",
+    })
+  ),
 });
 const linkrolesQueryParams = joi.object({
   linkroleId: joi.string().required().messages({

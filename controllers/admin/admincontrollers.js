@@ -7,6 +7,7 @@ const CreateModelClass = require("../../builder/classbuilder");
 const CreateSchema = require("../../builder/schemabuilder");
 const CreateClassController = require("../../builder/controllerbuilder");
 const CreateRoutes = require("../../builder/routesbuilder");
+const Systemroles = require("../../models/systemrolesmodel");
 const fileuploader = new FileUploader();
 
 const GetUserRoles = async (req, res) => {
@@ -18,7 +19,7 @@ const GetUserRoles = async (req, res) => {
     if (!findUserExists) {
       return res.status(400).json({ error: "User not found" });
     }
-    const roles = await req.db.findByConditions("roles", {
+    const roles = await req.db.findByConditions("user_roles", {
       userId: userId,
       isActive: 1,
     });
@@ -30,29 +31,30 @@ const GetUserRoles = async (req, res) => {
 
 const AddRoles = async (req, res) => {
   try {
-    const { userId, role } = req.body;
+    const systemroles = new Systemroles(req.db);
+    const { userId, roleId } = req.body;
     const findUserExists = await req.db.findOne("users", {
       id: userId,
     });
     if (!findUserExists) {
       return res.status(400).json({ error: "User not found" });
     }
-    const actualRole = USER_ROLES[role];
-    if (!actualRole) {
-      return res.status(400).json({ error: "Invalid role" });
-    }
+    systemroles.Id = roleId;
+    const actualRole = await systemroles.ViewSingleSystemroles();
+    // const actualRole = USER_ROLES[role];
     const findRoleExists = await req.db.findByConditions("roles", {
-      role: actualRole,
+      roleId: actualRole.id,
       userId: findUserExists.id,
+      isActive: 1,
     });
     if (findRoleExists.length > 0) {
       return res.status(400).json({ error: "Role already exists" });
     }
     const result = await req.db.insertOne("roles", {
       userId: userId,
-      role: actualRole,
-      rolename: role,
+      roleId: roleId,
       isActive: 1,
+      createdBy: req.user.id,
     });
     if (!result?.success) {
       return res.status(500).json({ error: "Something went wrong" });
@@ -66,19 +68,18 @@ const AddRoles = async (req, res) => {
 
 const RemoveRole = async (req, res) => {
   try {
-    const { userId, role } = req.body;
+    const systemroles = new Systemroles(req.db);
+    const { userId, roleId } = req.body;
     const findUserExists = await req.db.findOne("users", {
       id: userId,
     });
+    systemroles.Id = roleId;
     if (!findUserExists) {
       return res.status(400).json({ error: "User not found" });
     }
-    const actualRole = USER_ROLES[role];
-    if (!actualRole) {
-      return res.status(400).json({ error: "Invalid role" });
-    }
-    const findRoleExists = await req.db.findByConditions("roles", {
-      role: actualRole,
+    const actualRole = await systemroles.ViewSingleSystemroles();
+    const findRoleExists = await req.db.findByConditions("user_roles", {
+      roleId: actualRole.id,
       userId: findUserExists.id,
     });
     if (findRoleExists.length <= 0) {
