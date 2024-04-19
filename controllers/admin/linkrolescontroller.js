@@ -8,6 +8,24 @@ const ViewLinkroles = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+const getUserLinkRoles = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { start, size, filters, globalFilter, sorting } = req.query;
+    const linkroles = new Linkroles(req.db);
+    linkroles.userId = userId;
+    linkroles.page = parseInt(start);
+    linkroles.limit = parseInt(size);
+    linkroles.filters = JSON.parse(filters);
+    linkroles.globalFilter = globalFilter;
+    linkroles.sortBy = JSON.parse(sorting);
+    const assigned = await linkroles.getAssignedRoles();
+    res.status(200).json(assigned);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 const ViewSingleLinkroles = async (req, res) => {
   try {
     const { linkroleId } = req.params;
@@ -82,12 +100,23 @@ const DeleteLinkroles = async (req, res) => {
 const getUserModules = async (req, res) => {
   try {
     const { id: userId } = req.user;
-    console.log(userId);
     const linkroles = new Linkroles(req.db);
     const data = await linkroles.getUserModules(userId);
     res.status(200).json(data);
   } catch (error) {
-    throw new Error(error);
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const getUserRolesTypes = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const linkroles = new Linkroles(req.db);
+    linkroles.userId = userId;
+    const toassign = await linkroles.getToAssignRoles();
+    res.status(200).json(toassign);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 };
 module.exports = {
@@ -97,4 +126,6 @@ module.exports = {
   ViewLinkroles,
   ViewSingleLinkroles,
   getUserModules,
+  getUserRolesTypes,
+  getUserLinkRoles,
 };

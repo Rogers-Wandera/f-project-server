@@ -233,5 +233,27 @@ class Linkroles extends Model {
       throw new Error(error);
     }
   }
+
+  async getAssignedRoles() {
+    try {
+      const query = `SELECT *FROM vw_module_roles WHERE userId = ?;`;
+      const data = await this.__viewCustomQueryPaginate(query, [this.userId]);
+      return data;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async getToAssignRoles() {
+    try {
+      const query = `SELECT *FROM vw_module_links ml
+      WHERE ml.id NOT IN (SELECT linkId FROM vw_module_roles mr WHERE mr.userId = ?)
+      AND ml.isActive = 1;`;
+      const data = await this.db.executeQuery(query, [this.userId]);
+      return data;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
 }
 module.exports = Linkroles;

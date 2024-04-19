@@ -13,6 +13,7 @@ class ModuleLinks extends Model {
     this.creationDate = null;
     this.isActive = null;
     this.render = null;
+    this.released = null;
     this.db = dbinstance;
   }
 
@@ -33,6 +34,10 @@ class ModuleLinks extends Model {
     return this.position;
   }
 
+  get Released() {
+    return this.released;
+  }
+
   get Render() {
     return this.render;
   }
@@ -42,6 +47,9 @@ class ModuleLinks extends Model {
   }
   set ModuleId(moduleId) {
     this.moduleId = moduleId;
+  }
+  set Released(released) {
+    this.released = released;
   }
   set LinkName(linkName) {
     this.linkname = linkName;

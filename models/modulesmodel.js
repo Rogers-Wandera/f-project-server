@@ -198,6 +198,24 @@ class Modules extends Model {
       throw new Error(error);
     }
   }
+
+  async getSelectModules() {
+    try {
+      const data = await this.db.findAll(this.table);
+      if (data.length > 0) {
+        const formatted = data.map((item) => {
+          return {
+            value: item.id.toString(),
+            label: item.name,
+          };
+        });
+        return formatted;
+      }
+      return [];
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 }
 
 module.exports = Modules;

@@ -58,7 +58,7 @@ const GetSingleUserDetails = async (req, res) => {
     const { userId } = req.params;
     const userobj = new UserModel(req.db);
     userobj.Id = userId;
-    const data = await userobj.FindUser();
+    const data = await userobj.FindUser(true);
     res.status(200).json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });

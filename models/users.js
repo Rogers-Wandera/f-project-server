@@ -36,13 +36,13 @@ class UserModel extends Model {
     }
   }
 
-  userData(user) {
-    user["email"] = null;
+  userData(user, emailshow = false) {
+    user["email"] = emailshow ? user["email"] : null;
     user["password"] = null;
     return user;
   }
 
-  async FindUser() {
+  async FindUser(emailshow = false) {
     try {
       if (!this.id) {
         throw new Error("Id is required");
@@ -52,7 +52,7 @@ class UserModel extends Model {
       if (results.length <= 0) {
         throw new Error(`No ${this.table} found`);
       }
-      return this.userData(results[0]);
+      return this.userData(results[0], emailshow);
     } catch (error) {
       throw new Error("method-> FindUser: " + error.message);
     }

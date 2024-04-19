@@ -418,7 +418,7 @@ const GetModules = async (req, res) => {
 
 const AddModuleLinks = async (req, res) => {
   try {
-    const { linkname, route, render } = req.body;
+    const { linkname, route, render, released } = req.body;
     const { moduleId } = req.params;
     const modules = new Modules(req.db);
     const modulelinks = new ModuleLinks(req.db);
@@ -428,6 +428,7 @@ const AddModuleLinks = async (req, res) => {
     modulelinks.LinkName = linkname;
     modulelinks.Render = render;
     modulelinks.Route = route;
+    modulelinks.Released = released;
     const position = await modulelinks.CalculateNextPosition(moduleId);
     modulelinks.Position = position;
     const response = await modulelinks.AddLink();
@@ -442,7 +443,7 @@ const AddModuleLinks = async (req, res) => {
 
 const UpdateModuleLinks = async (req, res) => {
   try {
-    const { linkname, route, position, render } = req.body;
+    const { linkname, route, position, render, released } = req.body;
     const { moduleId, linkId } = req.params;
     const modules = new Modules(req.db);
     const modulelinks = new ModuleLinks(req.db);
@@ -454,6 +455,7 @@ const UpdateModuleLinks = async (req, res) => {
     modulelinks.LinkName = linkname;
     modulelinks.Route = route;
     modulelinks.Render = render;
+    modulelinks.released = released;
     modulelinks.Position = position;
     const response = await modulelinks.UpdateLink();
     if (response?.success === false) {
@@ -510,6 +512,16 @@ const GetLastModuleLinkPosition = async (req, res) => {
   }
 };
 
+const getSelectModules = async (req, res) => {
+  try {
+    const moduleobj = new Modules(req.db);
+    const data = await moduleobj.getSelectModules();
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 module.exports = {
   AddRoles,
   CreateTable,
@@ -530,4 +542,5 @@ module.exports = {
   DeleteModuleLinks,
   GetModuleLinks,
   GetLastModuleLinkPosition,
+  getSelectModules,
 };
