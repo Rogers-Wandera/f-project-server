@@ -59,6 +59,11 @@
       <p>
         If you did not register an account, you can safely ignore this email.
       </p>
+      <div>
+        <% if (moredata.length > 0) { moredata.map((item) => { %>
+        <div style="font-size: 16px; font-weight: 600"><%= item %></div>
+        <% }); } %>
+      </div>
       <p>From <strong class="bold"><%= senderName %></strong></p>
     </div>
   </body>

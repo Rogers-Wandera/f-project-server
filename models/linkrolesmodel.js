@@ -159,16 +159,6 @@ class Linkroles extends Model {
   //   update function
   async UpdateLinkroles() {
     try {
-      const Modulelink = new modulelinks(this.db);
-      const User = await this.db.findByConditions("users", {
-        id: this.userId,
-        isActive: 1,
-      });
-      Modulelink.Id = this.linkId;
-      await Modulelink.__find();
-      if (User.length <= 0) {
-        throw new Error("No User found");
-      }
       await this.findRoleExistsUser("update");
       this.updatedDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
       const results = await this.__update();

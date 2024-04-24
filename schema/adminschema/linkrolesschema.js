@@ -25,10 +25,28 @@ const linkrolesSchema = joi.object({
     })
   ),
 });
+
+const linkrolesupdateSchema = joi.object({
+  expireDate: joi
+    .date()
+    .required()
+    .format("YYYY-MM-DD HH:mm")
+    .min(new Date())
+    .messages({
+      "any.required": "Expire Date is required",
+      "date.format": "Expire Date must be in format YYYY-MM-DD HH:mm",
+      "date.base": "Expire Date must be a date",
+      "date.min": "Expire Date must be greater than or equal to now",
+    }),
+});
 const linkrolesQueryParams = joi.object({
   linkroleId: joi.string().required().messages({
     "any.required": "linkroleId is required",
     "any.string": "linkroleId must be a string",
   }),
 });
-module.exports = { linkrolesSchema, linkrolesQueryParams };
+module.exports = {
+  linkrolesSchema,
+  linkrolesQueryParams,
+  linkrolesupdateSchema,
+};

@@ -12,6 +12,7 @@ const {
 const {
   linkrolesSchema,
   linkrolesQueryParams,
+  linkrolesupdateSchema,
 } = require("../../schema/adminschema/linkrolesschema.js");
 const {
   validateSchema,
@@ -44,7 +45,7 @@ router
     VerifyJwt,
     VerifyEmail,
     VerifyRoles(USER_ROLES.Admin),
-    validateSchema(linkrolesSchema),
+    validateSchema(linkrolesupdateSchema),
     UpdateLinkroles
   )
   .delete(
