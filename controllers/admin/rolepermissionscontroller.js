@@ -1,14 +1,12 @@
 const Rolepermissions = require("../../models/rolepermissionsmodel");
 const ViewRolepermissions = async (req, res) => {
   try {
-    const { start, size, filters, globalFilter, sorting } = req.query;
+    const { linkId } = req.params;
+    const { userId } = req.query;
     const rolepermissions = new Rolepermissions(req.db);
-    rolepermissions.page = parseInt(start);
-    rolepermissions.limit = parseInt(size);
-    rolepermissions.filters = JSON.parse(filters);
-    rolepermissions.globalFilter = globalFilter;
-    rolepermissions.sortBy = JSON.parse(sorting);
-    const data = await rolepermissions.ViewRolepermissions();
+    rolepermissions.userId = userId;
+    console.log(linkId, userId);
+    const data = await rolepermissions.ViewRolepermissions(linkId);
     res.status(200).json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });

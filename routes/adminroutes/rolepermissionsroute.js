@@ -20,7 +20,7 @@ const VerifyRoles = require("../../middlewares/verifyRoles");
 const USER_ROLES = require("../../conn/rolesList");
 const router = express.Router();
 router
-  .route("/")
+  .route("/user/:linkId")
   .get(
     VerifyJwt,
     VerifyEmail,

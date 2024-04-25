@@ -92,12 +92,22 @@ class Rolepermissions extends Model {
     this.isActive = isActive;
   }
   //   view data
-  async ViewRolepermissions() {
+  async ViewRolepermissions(linkId = 0) {
     try {
-      const results = await this.__viewdata();
-      return results;
+      const query = `SELECT lp.*,rp.roleId,rp.id as rpId,mr.userId,
+      CASE WHEN mr.id IS NULL THEN 0 ELSE 1 END AS checked FROM vw_linkpermissions lp 
+      LEFT JOIN rolepermissions rp ON rp.permissionId = lp.id AND rp.isActive = 1
+      AND rp.userId = ?
+      LEFT JOIN vw_module_roles mr on mr.id = rp.roleId AND mr.userId = ?
+      WHERE lp.linkId = ?;`;
+      const data = await this.db.executeQuery(query, [
+        this.userId,
+        this.userId,
+        linkId,
+      ]);
+      return data;
     } catch (error) {
-      throw new Error(error);
+      throw new Error(error.message);
     }
   }
   // view one
@@ -106,7 +116,7 @@ class Rolepermissions extends Model {
       const results = await this.__viewOne();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw new Error(error.message);
     }
   }
   //   add function
@@ -130,7 +140,7 @@ class Rolepermissions extends Model {
       const results = await this.__add();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw new Error(error.message);
     }
   }
   //   update function
@@ -150,10 +160,10 @@ class Rolepermissions extends Model {
         throw new Error("No User found");
       }
       this.updatedDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-      const results = await this.__update();
-      return results;
+      // const results = await this.__update();
+      // return results;
     } catch (error) {
-      throw new Error(error);
+      throw new Error(error.message);
     }
   }
   //   delete function
@@ -163,7 +173,7 @@ class Rolepermissions extends Model {
       const results = await this.__delete();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw new Error(error.message);
     }
   }
 }

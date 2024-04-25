@@ -1,4 +1,3 @@
-const USER_ROLES = require("../../conn/rolesList");
 const { format } = require("date-fns");
 const FileUploader = require("../../conn/uploader");
 const Modules = require("../../models/modulesmodel");

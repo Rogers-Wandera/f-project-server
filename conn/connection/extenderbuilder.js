@@ -1,3 +1,4 @@
+const { logEvent } = require("../../middlewares/logs");
 const DBMethodsBuilder = require("./methodsbuilder");
 const { format, differenceInDays } = require("date-fns");
 
@@ -462,7 +463,6 @@ class ConnectionBuilder extends DBMethodsBuilder {
       sql += " OFFSET ?";
       queryvalues.push(offsetval);
 
-      console.log(sql);
       const count = await this.countRecords(mainTable);
       const totalPages = Math.ceil(count.count / limit);
       const [results] = await this.connection.query(sql, queryvalues);
@@ -645,6 +645,7 @@ class ConnectionBuilder extends DBMethodsBuilder {
       queryValues.push(offsetVal);
 
       // Execute query
+      console.log(sql);
       const [results] = await this.connection.query(sql, queryValues);
 
       // Return paginated results

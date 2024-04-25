@@ -89,7 +89,7 @@ const ViewCustomPermissions = async (req, res) => {
     const { linkId } = req.params;
     const linkpermissions = new Linkpermissions(req.db);
     linkpermissions.linkId = linkId;
-    const data = linkpermissions.ViewSelectPermissions();
+    const data = await linkpermissions.ViewSelectPermissions();
     res.status(200).json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });

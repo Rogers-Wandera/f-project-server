@@ -107,7 +107,7 @@ class Linkpermissions extends Model {
   async ViewLinkpermissions() {
     try {
       const results = await this.__viewCustomQueryPaginate(
-        "SELECT *FROM vw_linkpermissions WHERE linkId = ?;",
+        "SELECT *FROM vw_linkpermissions WHERE linkId = ?",
         [this.linkId]
       );
       return results;
