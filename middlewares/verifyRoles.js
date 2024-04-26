@@ -16,6 +16,8 @@ const VerifyRoles = (...allowedRoles) => {
       // get the request method
       const method = req.method;
       const urlpath = `${req.baseUrl}${req.route.path}`;
+      console.log(`baseurl ${urlpath}`);
+      console.log(req.user.id);
 
       // looking into the temporary roles to find a match
       const findTempRoles = await req.db.findByConditions("vw_usertemproles", {
@@ -28,9 +30,12 @@ const VerifyRoles = (...allowedRoles) => {
       const methods = [];
 
       // check to see if the role and method exist on the temproles
+
       if (findTempRoles.length > 0) {
+        findTempRoles.forEach((role) => {
+          methods.push(role.method);
+        });
         for (let i = 0; i < findTempRoles.length; i++) {
-          methods.push(findTempRoles[i].method);
           if (findTempRoles[i].roleValue === urlpath) {
             if (methods.includes(method)) {
               urlExists = findTempRoles[i];
@@ -40,7 +45,6 @@ const VerifyRoles = (...allowedRoles) => {
           }
         }
       }
-
       let expired = false;
       // if the role is true and has expired we send a 401 error
       if (urlExists) {

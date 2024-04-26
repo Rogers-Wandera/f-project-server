@@ -5,7 +5,6 @@ const ViewRolepermissions = async (req, res) => {
     const { userId } = req.query;
     const rolepermissions = new Rolepermissions(req.db);
     rolepermissions.userId = userId;
-    console.log(linkId, userId);
     const data = await rolepermissions.ViewRolepermissions(linkId);
     res.status(200).json(data);
   } catch (error) {

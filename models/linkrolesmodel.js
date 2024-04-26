@@ -238,7 +238,7 @@ class Linkroles extends Model {
     try {
       const query = `SELECT *FROM vw_module_links ml
       WHERE ml.id NOT IN (SELECT linkId FROM vw_module_roles mr WHERE mr.userId = ?)
-      AND ml.isActive = 1;`;
+      AND ml.isActive = 1 AND ml.released = 1;`;
       const data = await this.db.executeQuery(query, [this.userId]);
       return data;
     } catch (error) {

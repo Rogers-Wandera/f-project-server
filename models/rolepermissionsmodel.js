@@ -4,6 +4,7 @@ const linkroles = require("./linkrolesmodel");
 const linkpermissions = require("./linkpermissionsmodel");
 
 const format = require("date-fns/format");
+const Temrouteroles = require("./temrouteroles");
 class Rolepermissions extends Model {
   constructor(dbinstance = null) {
     super();
@@ -124,20 +125,41 @@ class Rolepermissions extends Model {
     try {
       const Linkrole = new linkroles(this.db);
       const Linkpermission = new linkpermissions(this.db);
+      const temprouteroles = new Temrouteroles(this.db);
       const User = await this.db.findByConditions("users", {
         id: this.userId,
         isActive: 1,
       });
       Linkrole.Id = this.roleId;
-      await Linkrole.__find();
+      const actualrole = await Linkrole.__find();
       Linkpermission.Id = this.permissionId;
-      await Linkpermission.__find();
+      const linkpermission = await Linkpermission.__find();
       if (User.length <= 0) {
         throw new Error("No User found");
       }
+      temprouteroles.CreatedBy = this.createdBy;
+      temprouteroles.RoleName = linkpermission[0].accessName;
+      temprouteroles.RoleValue = linkpermission[0].acessRoute;
+      temprouteroles.UserId = this.userId;
+      temprouteroles.Description = linkpermission[0].description;
+      temprouteroles.expireTime = actualrole[0].expireDate;
       this.creationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
       this.isActive = 1;
+      const findTempRoles = await this.db.findByConditions("vw_usertemproles", {
+        userId: this.userId,
+        roleValue: temprouteroles.roleValue,
+        method: linkpermission[0].method,
+        isActive: 1,
+      });
+      if (findTempRoles.length > 0) {
+        throw new Error("Permission already exists");
+      }
       const results = await this.__add();
+      if (results?.success) {
+        await temprouteroles.addTemRouteRole({
+          method: linkpermission[0].method,
+        });
+      }
       return results;
     } catch (error) {
       throw new Error(error.message);
@@ -169,9 +191,53 @@ class Rolepermissions extends Model {
   //   delete function
   async DeleteRolepermissions() {
     try {
+      const query = `SELECT lp.*,rp.roleId,rp.id as rpId,mr.userId,
+      CASE WHEN mr.id IS NULL THEN 0 ELSE 1 END AS checked FROM vw_linkpermissions lp 
+      LEFT JOIN rolepermissions rp ON rp.permissionId = lp.id AND rp.isActive = 1
+      LEFT JOIN vw_module_roles mr on mr.id = rp.roleId WHERE rp.id = ?`;
+      const findPermission = await this.db.executeQuery(query, [this.id]);
+      if (findPermission.length <= 0) {
+        throw new Error("Permission not found");
+      }
       this.deleted_at = format(new Date(), "yyyy-MM-dd HH:mm:ss");
       const results = await this.__delete();
+      await this.deleteCallback(findPermission[0]);
       return results;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async deleteCallback(data) {
+    try {
+      const temrouteobj = new Temrouteroles(this.db);
+      const findTempRoles = await this.db.findByConditions("vw_usertemproles", {
+        userId: data.userId,
+        roleValue: data.acessRoute,
+        method: data.method,
+        isActive: 1,
+      });
+      if (findTempRoles.length > 0) {
+        const id = findTempRoles[0].tempRouteId;
+        temrouteobj.Id = id;
+        const response = await temrouteobj.removeTempRole();
+        return response;
+      }
+      return true;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async deleteRolePermission(roleId) {
+    try {
+      const query = `SELECT *FROM ?? WHERE roleId = ? AND isActive = 1`;
+      const data = await this.db.executeQuery(query, [this.table, roleId]);
+      if (data.length > 0) {
+        const ids = data.map((item) => item.id);
+        const remove = await this.db.deleteMany(this.table, ids);
+        return remove;
+      }
     } catch (error) {
       throw new Error(error.message);
     }

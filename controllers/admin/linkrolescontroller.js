@@ -1,3 +1,4 @@
+const { format, parseISO } = require("date-fns");
 const Linkroles = require("../../models/linkrolesmodel");
 const ViewLinkroles = async (req, res) => {
   try {
@@ -63,7 +64,7 @@ const UpdateLinkroles = async (req, res) => {
     const { linkroleId } = req.params;
     const linkroles = new Linkroles(req.db);
     linkroles.Id = linkroleId;
-    linkroles.ExpireDate = expireDate;
+    linkroles.ExpireDate = format(parseISO(expireDate), "yyyy-MM-dd HH:mm");
     linkroles.updatedBy = req.user.id;
     const linkrole = await linkroles.__find();
     const results = await linkroles.UpdateLinkroles();
