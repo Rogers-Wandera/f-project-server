@@ -27,7 +27,7 @@ router
   .get(
     VerifyJwt,
     VerifyEmail,
-    VerifyRoles(USER_ROLES.Admin),
+    VerifyRoles(USER_ROLES.Admin, USER_ROLES.User),
     GetSingleUserDetails
   );
 module.exports = router;

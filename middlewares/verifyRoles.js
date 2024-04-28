@@ -16,8 +16,6 @@ const VerifyRoles = (...allowedRoles) => {
       // get the request method
       const method = req.method;
       const urlpath = `${req.baseUrl}${req.route.path}`;
-      console.log(`baseurl ${urlpath}`);
-      console.log(req.user.id);
 
       // looking into the temporary roles to find a match
       const findTempRoles = await req.db.findByConditions("vw_usertemproles", {
