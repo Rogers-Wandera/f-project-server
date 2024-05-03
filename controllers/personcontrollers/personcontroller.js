@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
 const { format } = require("date-fns");
+const Model = require("../../models/modal");
 
 const CheckPersonExists = async (req, id) => {
   try {
@@ -130,6 +131,7 @@ const AddPersonMeta = async (req, res) => {
     metaobj["createdAt"] = format(new Date(), "yyyy-MM-dd HH:mm:ss");
     metaobj["isActive"] = 1;
     metaobj["personId"] = personId;
+    metaobj["createdBy"] = req.user.id;
     const results = await req.db.insertOne("personmeta", metaobj);
     if (!results?.success) {
       return res.status(500).json({ msg: "Something went wrong" });
@@ -212,18 +214,16 @@ const DeletePersonMeta = async (req, res) => {
 
 const GetPersonData = async (req, res) => {
   try {
-    const data = await req.db.performJoin(
-      "person",
-      [
-        {
-          table: "users",
-          alias: "u",
-          condition: "u.id = mt.createdBy",
-          join: "INNER",
-          columns: ["CONCAT(u.firstname, ' ', u.lastname) as createdByName"],
-        },
-      ],
-      { "mt.isActive": 1 }
+    const { start, size, filters, globalFilter, sorting } = req.query;
+    const persons = new Model(req.db);
+    persons.table = "person";
+    persons.page = parseInt(start);
+    persons.limit = parseInt(size);
+    persons.filters = JSON.parse(filters);
+    persons.globalFilter = globalFilter;
+    persons.sortBy = JSON.parse(sorting);
+    const data = await persons.__viewCustomQueryPaginate(
+      `SELECT *FROM personsdata WHERE isActive = 1`
     );
     res.status(200).json(data);
   } catch (error) {
@@ -234,27 +234,12 @@ const GetPersonData = async (req, res) => {
 const GetSinglePerson = async (req, res) => {
   try {
     const { personId } = req.params;
-    const personExists = await req.db.findByConditions("person", {
-      id: personId,
-    });
-    if (personExists.length <= 0) {
-      return res
-        .status(401)
-        .json({ msg: "Person with that id does not exist" });
+    const query = "SELECT *FROM personsdata WHERE isActive = 1 AND id = ?";
+    const response = await req.db.executeQuery(query, [personId]);
+    let data = {};
+    if (response.length > 0) {
+      data = response[0];
     }
-    const data = await req.db.performJoin(
-      "person",
-      [
-        {
-          table: "users",
-          alias: "u",
-          condition: "u.id = mt.createdBy",
-          join: "INNER",
-          columns: ["CONCAT(u.firstname, ' ', u.lastname) as createdByName"],
-        },
-      ],
-      { "mt.isActive": 1, "mt.id": personId }
-    );
     res.status(200).json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -264,27 +249,18 @@ const GetSinglePerson = async (req, res) => {
 const GetPersonMetaData = async (req, res) => {
   try {
     const { personId } = req.params;
-    const personExists = await req.db.findByConditions("person", {
-      id: personId,
-    });
-    if (personExists.length <= 0) {
-      return res
-        .status(401)
-        .json({ msg: "Person with that id does not exist" });
-    }
-    const data = await req.db.performJoin(
-      "personmeta",
-      [
-        {
-          table: "person",
-          alias: "p",
-          condition: "p.id = mt.personId",
-          join: "INNER",
-          columns: ["CONCAT(p.firstName, ' ', p.lastName) as personName"],
-        },
-      ],
-      { "mt.isActive": 1, "mt.personId": personId }
-    );
+    const { start, size, filters, globalFilter, sorting } = req.query;
+    const permonmeta = new Model(req.db);
+    permonmeta.table = "personmeta";
+    permonmeta.page = parseInt(start);
+    permonmeta.limit = parseInt(size);
+    permonmeta.filters = JSON.parse(filters);
+    permonmeta.globalFilter = globalFilter;
+    permonmeta.sortBy = JSON.parse(sorting);
+    const query = `SELECT pm.*,ps.fullName, CONCAT(us.firstname, ' ', us.lastname)
+    as createdByName FROM personmeta pm INNER JOIN personsdata ps ON ps.id = pm.personId 
+    LEFT JOIN users us ON us.id = pm.createdBy WHERE pm.personId = ? AND pm.isActive = 1`;
+    const data = await permonmeta.__viewCustomQueryPaginate(query, [personId]);
     res.status(200).json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });

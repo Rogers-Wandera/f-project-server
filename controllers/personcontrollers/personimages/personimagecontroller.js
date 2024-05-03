@@ -89,10 +89,38 @@ const DeletePersonImage = async (req, res) => {
     } else {
       // delete image from the cloud
       const { publicId } = imageExists[0];
-      const results = await uploader.deleteCloudinaryImage(publicId);
+      const results = await uploader.deleteCloudinaryImage(publicId, "image");
       console.log(results);
     }
     res.status(200).json({ msg: "Image deleted successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const DeleteMultiplePersonImage = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    const { data } = req.body;
+    // find the person exists
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+    });
+    if (personExists.length <= 0) {
+      return res.status(400).json({ error: "Person not found" });
+    }
+    const ids = data.map((item) => item.imageId);
+    const results = await req.db.deleteMany("imagedata", ids);
+    if (!results) {
+      return res.status(500).json({ error: "Something went wrong" });
+    } else {
+      // delete image from the cloud
+      const publicIds = data.map((item) => item.publicId);
+      publicIds.forEach(async (publicId) => {
+        await uploader.deleteCloudinaryImage(publicId, "image");
+      });
+    }
+    res.status(200).json({ msg: "Images deleted successfully" });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -111,7 +139,7 @@ const GetPersonImages = async (req, res) => {
       personId,
       isActive: 1,
     });
-    res.status(200).json({ images });
+    res.status(200).json(images);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -298,4 +326,5 @@ module.exports = {
   DeletePersonImageMeta,
   GetPersonImageMeta,
   getImagesInFolder,
+  DeleteMultiplePersonImage,
 };

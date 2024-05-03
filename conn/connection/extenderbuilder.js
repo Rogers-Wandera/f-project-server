@@ -645,7 +645,6 @@ class ConnectionBuilder extends DBMethodsBuilder {
       queryValues.push(offsetVal);
 
       // Execute query
-      console.log(sql);
       const [results] = await this.connection.query(sql, queryValues);
 
       // Return paginated results

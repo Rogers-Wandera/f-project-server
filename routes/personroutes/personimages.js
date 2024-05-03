@@ -18,12 +18,14 @@ const {
   DeletePersonImageMeta,
   GetPersonImageMeta,
   getImagesInFolder,
+  DeleteMultiplePersonImage,
 } = require("../../controllers/personcontrollers/personimages/personimagecontroller");
 const {
   PersonImageSchema,
   PersonImageQueryParams,
   PersonImageMetaSchema,
   PersonImageMetaQueryParams,
+  deletemanyimagesschema,
 } = require("../../schema/personschema/schema");
 
 // person image
@@ -77,6 +79,16 @@ router
     VerifyRoles(USER_ROLES.Admin),
     validateQueryParamsSchema(PersonImageMetaQueryParams),
     DeletePersonImageMeta
+  );
+
+router
+  .route("/multiple/delete/:personId")
+  .delete(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin),
+    validateSchema(deletemanyimagesschema),
+    DeleteMultiplePersonImage
   );
 
 router.route("/folder/:personId").get(getImagesInFolder);

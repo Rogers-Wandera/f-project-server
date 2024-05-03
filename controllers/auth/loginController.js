@@ -2,6 +2,7 @@ const bcryptjs = require("bcryptjs");
 const { format } = require("date-fns");
 const jwt = require("jsonwebtoken");
 const userRoles = require("../../conn/rolesList");
+const { encryptData } = require("../../helpers/helperfuns");
 const loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -33,6 +34,7 @@ const loginController = async (req, res) => {
           verified: user.verified,
           adminCreated: user.adminCreated,
           position: user.position,
+          image: encryptData(user.image),
         },
         sub: user.id,
       },
