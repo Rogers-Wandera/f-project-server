@@ -192,6 +192,24 @@ const PersonAudioSchema = joi.object({
   }),
 });
 
+const PersonMultipleAudioSchema = joi.object({
+  audios: joi
+    .array()
+    .items(
+      PersonAudioObject.required().messages({
+        "string.empty": "Audio cannot be empty",
+        "any.required": "Audio is required",
+      })
+    )
+    .min(1)
+    .required()
+    .messages({
+      "array.empty": "Audios cannot be empty",
+      "any.required": "Audios is required",
+      "array.min": "At least one Audio is required",
+    }),
+});
+
 const PersonAudioParams = joi.object({
   audioId: joi.string().required().messages({
     "string.empty": "Audio id cannot be empty",
@@ -212,4 +230,5 @@ module.exports = {
   PersonAudioParams,
   imagesArray,
   deletemanyimagesschema,
+  PersonMultipleAudioSchema,
 };

@@ -27,7 +27,7 @@ class FileUploader {
         fileFilter: (req, file, cb) => {
           if (
             !file.originalname.match(
-              /\.(jpg|jpeg|png|gif|mp4|mov|mp3|wav|avi|ogg|mkv|waptt)$/i
+              /\.(jpg|jpeg|png|gif|mp4|mov|mp3|wav|avi|ogg|mkv|waptt|opus)$/i
             )
           ) {
             return cb(new Error("Invalid File type"), false);
@@ -39,7 +39,7 @@ class FileUploader {
         { name: "image", maxCount: this.filelimit },
         { name: "video", maxCount: 1 },
         { name: "pdf", maxCount: 1 },
-        { name: "audio", maxCount: 1 },
+        { name: "audio", maxCount: this.filelimit },
       ]);
     };
     this.cloudinaryConfig = {
@@ -56,7 +56,7 @@ class FileUploader {
       const upload = cloudinary.uploader.upload(filepath, this.options);
       return upload;
     } catch (error) {
-      throw new Error(error);
+      throw new Error(error.message);
     }
   }
 
@@ -93,7 +93,7 @@ class FileUploader {
       const files = await this.uploadFile(req, res, filesize);
       return files;
     } catch (error) {
-      throw new Error(error);
+      throw new Error(error.message);
     }
   }
   async singleUploadCloudinary(file, options = {}) {
@@ -112,7 +112,7 @@ class FileUploader {
       const { secure_url, public_id } = upload;
       return { url: secure_url, public_id: public_id };
     } catch (error) {
-      throw new Error(error);
+      throw new Error(error.message);
     }
   }
 
@@ -127,7 +127,7 @@ class FileUploader {
       }
       return urls;
     } catch (error) {
-      throw new Error(error);
+      throw new Error(error.message);
     }
   }
 
@@ -144,7 +144,7 @@ class FileUploader {
 
       return images;
     } catch (error) {
-      throw new Error(error);
+      throw new Error(error.message);
     }
   }
 
