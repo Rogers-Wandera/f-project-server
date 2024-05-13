@@ -129,11 +129,40 @@ const GetPersonAudio = async (req, res) => {
       return;
     }
     const recordobj = getRecorderInstances(personId);
-    const audiodata = recordobj.retrieve();
+    const audiodata = await recordobj.retrieve();
     const { path, flags } = audiodata;
+    if (path == "") {
+      return res
+        .status(200)
+        .json({ path: "", flags: "", defaultEncoding: "", original: "" });
+    }
     const defaultEncoding = audiodata._readableState.defaultEncoding;
-    const audio = { path, flags, defaultEncoding };
-    res.status(200).json({ audio });
+    const audio = { path, flags, defaultEncoding, original: "" };
+    audio.original = path;
+    const audioFileName = `${personId}.wav`;
+    const audioUrl = `${process.env.BASE_URL}/recordings/${audioFileName}`;
+    audio.path = audioUrl;
+    res.status(200).json(audio);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const DeletePersonAudio = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+    });
+    if (personExists.length <= 0) {
+      res.status(400).json({ msg: "No person found" });
+      return;
+    }
+    const recordobj = getRecorderInstances(personId);
+    if (recordobj) {
+      await recordobj.deleterecord();
+    }
+    res.status(200).json({ msg: "Audio File removed successfully" });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -185,7 +214,7 @@ const UploadPersonAudio = async (req, res) => {
     const recordobj = getRecorderInstances(personId);
     if (record) {
       // delete the file from the recordings
-      recordobj.deleterecord();
+      await recordobj.deleterecord();
     }
     recordobj.deleteconverted();
     res.status(200).json({ msg: "File uploaded successfully" });
@@ -266,7 +295,7 @@ const CancelUpload = async (req, res) => {
     }
     const recordobj = getRecorderInstances(personId);
     // delete the file from the recordings
-    const response = recordobj.deleterecord();
+    const response = await recordobj.deleterecord();
     if (!response) {
       res.status(500).json({ msg: "Something went wrong" });
     }
@@ -443,4 +472,5 @@ module.exports = {
   DeleteAudioCloudRecord,
   UploadMultiple,
   UploadMultipleAudioFromLocal,
+  DeletePersonAudio,
 };

@@ -21,6 +21,7 @@ const io = new Server(server, {
 });
 const { HandleCrons } = require("./utils/crons");
 const MainRouter = require("./routes");
+const path = require("path");
 
 app.use(logger);
 app.use(credentials);
@@ -31,6 +32,10 @@ const database = new Connection();
 const base_url = process.env.BASE_API;
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(
+  "/api/v1/recordings",
+  express.static(path.join(__dirname, "recordings"))
+);
 
 app.use((req, res, next) => {
   req.db = database;

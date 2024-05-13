@@ -94,6 +94,8 @@ const HandleCrons = (database, io) => {
       await database.DeleteRecycleBinData();
       RemoveFolder("copy");
       RemoveFolder("recordings");
+      RemoveFolder("converted");
+      RemoveFolder("deletedrecords");
     });
   } catch (error) {
     console.log(error);

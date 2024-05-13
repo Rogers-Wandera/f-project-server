@@ -22,6 +22,7 @@ const {
   DeleteAudioCloudRecord,
   UploadMultiple,
   UploadMultipleAudioFromLocal,
+  DeletePersonAudio,
 } = require("../../controllers/personcontrollers/personaudios/personaudioscontroller");
 const {
   PersonAudioSchema,
@@ -32,7 +33,13 @@ const {
 
 router
   .route("/:personId")
-  .get(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), GetPersonAudio);
+  .get(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), GetPersonAudio)
+  .delete(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin),
+    DeletePersonAudio
+  );
 router
   .route("/startrecord/:personId")
   .post(

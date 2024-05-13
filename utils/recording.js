@@ -1,6 +1,7 @@
 const recorder = require("node-record-lpcm16");
 const fs = require("fs");
 const path = require("path");
+const { v4: uuid } = require("uuid");
 
 class Recorder {
   /**
@@ -12,6 +13,7 @@ class Recorder {
     this.personId = personId;
     this.filepath = path.join(__dirname, "..", "recordings");
     this.recordingStream = null;
+    this.filestream = null;
     this.timeoutflag = false;
     this.onRecordComplete = onRecordComplete || (() => {});
     this.audioLength = 0;
@@ -24,15 +26,27 @@ class Recorder {
    * Starts the audio recording process.
    * Continuously updates the audio length and stops recording when it reaches one minute.
    */
-  start() {
+  async start() {
     try {
+      if (this.filestream) {
+        this.filestream.close();
+      }
+      this.filestream = fs.createWriteStream(
+        `recordings/${this.personId}.wav`,
+        {
+          encoding: "binary",
+          flags: "a",
+        }
+      );
       this.recordingStream = recorder
         .record({
           sampleRate: 44100,
         })
         .stream()
         .on("error", (err) => {
-          throw new Error(`${err.name}: ${err.message}`);
+          // console.log(err);
+          // throw new Error(`${err.name}: ${err.message}`);
+          console.log(err.message);
         })
         .on("data", (data) => {
           this.audioLength += data.length;
@@ -42,13 +56,11 @@ class Recorder {
             this.stop();
             this.onRecordComplete();
           }
-        });
-      const file = fs.createWriteStream(`recordings/${this.personId}.wav`, {
-        encoding: "binary",
-      });
-      this.recordingStream.pipe(file);
+        })
+        .pipe(this.filestream);
     } catch (error) {
-      throw new Error("Error recording (start) ->: " + error.message);
+      console.log(error);
+      // throw new Error("Error recording (start) ->: " + error.message);
     }
   }
 
@@ -60,6 +72,10 @@ class Recorder {
       if (this.recordingStream) {
         if (this.timeoutflag) {
           this.recordingStream.end();
+          if (this.filestream) {
+            this.filestream.close();
+            this.filestream = null;
+          }
           this.recordingStream = null;
         }
       }
@@ -111,7 +127,7 @@ class Recorder {
         const filestream = fs.createReadStream(recordingPath);
         return filestream;
       } else {
-        throw new Error("Recording not found");
+        return { path: "", flags: "", defaultEncoding: "" };
       }
     } catch (error) {
       throw new Error("Error retrieving recording -> " + error.message);
@@ -123,11 +139,16 @@ class Recorder {
    * @returns {boolean} - True if the file is successfully deleted.
    * @throws {Error} - If the recording file is not found.
    */
-  deleterecord() {
+  async deleterecord() {
     try {
       const recordingPath = path.join(this.filepath, `${this.personId}.wav`);
+      const deletepath = path.join(__dirname, "..", "deletedrecords");
+      if (!fs.existsSync(deletepath)) {
+        fs.mkdirSync(deletepath);
+      }
       if (fs.existsSync(recordingPath)) {
-        fs.unlinkSync(recordingPath);
+        const newpath = path.join(deletepath, `${this.personId}-${uuid()}.wav`);
+        fs.renameSync(recordingPath, newpath);
         return true;
       } else {
         throw new Error("Recording not found");
