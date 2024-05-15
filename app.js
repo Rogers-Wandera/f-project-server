@@ -22,6 +22,8 @@ const io = new Server(server, {
 const { HandleCrons } = require("./utils/crons");
 const MainRouter = require("./routes");
 const path = require("path");
+const { HandleOnline } = require("./sockets/online");
+const { TokenExpirey } = require("./sockets/tokenexpiry");
 
 app.use(logger);
 app.use(credentials);
@@ -61,10 +63,21 @@ app.use(`${base_url}`, MainRouter);
 //end of routes
 
 // io
-io.on("Connection", (socket) => {
-  console.log("cleint connected");
+io.on("connection", async (socket) => {
+  console.log("a user connected");
+  const allsockets = await io.fetchSockets();
+  const socketids = allsockets.map((sck) => sck.id);
+  if (socketids.length > 0) {
+    HandleOnline(socket, io).onlineusers(database);
+    HandleOnline(socket, io).logoutsuer(database);
+    TokenExpirey(socket, io);
+    socket.on("clientusersrefresh", () => {
+      io.emit("refreshusers", {});
+    });
+  }
   socket.on("disconnect", () => {
     console.log("Client disconnected");
+    HandleOnline(socket, io).offline(database);
   });
 });
 const limiter = RequesteLimiter(2);

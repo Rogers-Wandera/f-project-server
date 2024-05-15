@@ -4,6 +4,7 @@ const Linkroles = require("../models/linkrolesmodel");
 const cronjob = require("node-cron");
 const { RemoveFolder } = require("../helpers/crons");
 const Rolepermissions = require("../models/rolepermissionsmodel");
+const { ServerAskToken } = require("../sockets/tokenexpiry");
 
 const InsertSchedule = async (db, records, tablename, action) => {
   try {
@@ -83,6 +84,10 @@ const HandleCrons = (database, io) => {
     // minute crons
     cronjob.schedule("* * * * *", async () => {
       await HandleExpiredLinkRoles(io, database);
+    });
+    // To run every 5 minutes
+    cronjob.schedule("*/5 * * * *", () => {
+      ServerAskToken(io);
     });
     // hourly cron
     cronjob.schedule("0 * * * *", async () => {

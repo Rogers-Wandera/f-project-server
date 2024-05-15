@@ -17,6 +17,7 @@ const UserprofileimagesRouter = require("./auth/userprofileimagesroute.js");
 const SystemrolesRouter = require("./auth/systemrolesroute.js");
 const LinkpermissionsRouter = require("./adminroutes/linkpermissionsroute.js")
 const RolepermissionsRouter = require("./adminroutes/rolepermissionsroute.js")
+const RefreshtokensRouter = require("./auth/refreshtokensroute.js")
 // end of routes imports
 
 const router = require("express").Router();
@@ -40,6 +41,7 @@ router.use(`/userprofiles`, UserprofileimagesRouter);
 router.use(`/sysroles`, SystemrolesRouter);
 router.use(`/modulepermission`, LinkpermissionsRouter);
 router.use(`/rolepermission`, RolepermissionsRouter);
+router.use(`/refreshtoken`, RefreshtokensRouter);
 //end of routes
 
 module.exports = router;

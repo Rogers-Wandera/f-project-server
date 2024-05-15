@@ -19,6 +19,7 @@ const {
   GetPersonImageMeta,
   getImagesInFolder,
   DeleteMultiplePersonImage,
+  UploadTakenImage,
 } = require("../../controllers/personcontrollers/personimages/personimagecontroller");
 const {
   PersonImageSchema,
@@ -27,6 +28,7 @@ const {
   PersonImageMetaQueryParams,
   deletemanyimagesschema,
 } = require("../../schema/personschema/schema");
+const Joi = require("joi");
 
 // person image
 router
@@ -92,5 +94,18 @@ router
   );
 
 router.route("/folder/:personId").get(getImagesInFolder);
+router.route("/uploads/person/single/:personId").post(
+  VerifyJwt,
+  VerifyEmail,
+  VerifyRoles(USER_ROLES.Admin),
+  validateSchema(
+    Joi.object({
+      image: Joi.string().required().messages({
+        "any.required": "image is required",
+      }),
+    })
+  ),
+  UploadTakenImage
+);
 
 module.exports = router;

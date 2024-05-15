@@ -2,6 +2,7 @@ const { format } = require("date-fns");
 const FileUploader = require("../../../conn/uploader");
 const uploader = new FileUploader();
 const { v4: uuidv4 } = require("uuid");
+const Modal = require("../../../models/modal");
 
 const imageotions = {
   use_filename: true,
@@ -317,6 +318,50 @@ const getImagesInFolder = async (req, res) => {
   }
 };
 
+const UploadTakenImage = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    const { image } = req.body;
+    const matches = image.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      throw new Error("Invalid base64 string");
+    }
+    const personmodal = new Modal(req.db);
+    personmodal.id = personId;
+    personmodal.table = "person";
+    const person = personmodal.__viewOne();
+    const newoptions = {
+      ...imageotions,
+      folder: `persons/${personId}`,
+      userId: req.user.id,
+      alt: "person image",
+      resource_type: "image",
+    };
+    const public_id = uuidv4();
+    const imagepath = { path: image, public_id };
+    uploader.options = newoptions;
+    const uploaded = await uploader.singleUploadCloudinary(
+      imagepath,
+      newoptions
+    );
+    const imageObj = {
+      userId: req.user.id,
+      personId: personId,
+      imageUrl: uploaded.url,
+      timestamp: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+      isActive: 1,
+      publicId: uploaded.public_id,
+    };
+    const response = await req.db.insertOne("imagedata", imageObj);
+    if (!response) {
+      return res.status(500).json({ error: "Something went wrong" });
+    }
+    res.status(200).json({ msg: "Image uploaded successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 module.exports = {
   AddPersonImage,
   DeletePersonImage,
@@ -327,4 +372,5 @@ module.exports = {
   GetPersonImageMeta,
   getImagesInFolder,
   DeleteMultiplePersonImage,
+  UploadTakenImage,
 };
