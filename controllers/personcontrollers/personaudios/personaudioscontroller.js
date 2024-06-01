@@ -278,7 +278,6 @@ const UploadMultiple = async (req, res) => {
     );
     res.status(200).json({ msg: "Files uploaded successfully" });
   } catch (error) {
-    console.log(error);
     res.status(400).json({ error: error.message });
   }
 };

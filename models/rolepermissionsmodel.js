@@ -14,7 +14,6 @@ class Rolepermissions extends Model {
     this.roleId = null;
     this.permissionId = null;
     this.userId = null;
-
     this.creationDate = null;
     this.createdBy = null;
     this.updatedBy = null;

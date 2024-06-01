@@ -113,7 +113,7 @@ class Linkroles extends Model {
       }
       return true;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   view data
@@ -122,7 +122,7 @@ class Linkroles extends Model {
       const results = await this.__viewdata();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   // view one
@@ -131,7 +131,7 @@ class Linkroles extends Model {
       const results = await this.__viewOne();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   add function
@@ -153,7 +153,7 @@ class Linkroles extends Model {
       const results = await this.__add();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   update function
@@ -164,7 +164,7 @@ class Linkroles extends Model {
       const results = await this.__update();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   delete function
@@ -174,7 +174,7 @@ class Linkroles extends Model {
       const results = await this.__delete();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -209,7 +209,7 @@ class Linkroles extends Model {
       }
       return data;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -220,7 +220,7 @@ class Linkroles extends Model {
       });
       return data;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 

@@ -40,7 +40,7 @@ const loginController = async (req, res) => {
         sub: user.id,
       },
       process.env.JWT_SECRET,
-      // it should expire in the next 12 hours
+      // it should expire in the next 1 hour
       { expiresIn: "1h" }
     );
     const refreshToken = jwt.sign(

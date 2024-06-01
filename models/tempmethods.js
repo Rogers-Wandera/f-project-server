@@ -61,7 +61,7 @@ class Tempmethods extends Model {
       const results = await this.__add();
       return results;
     } catch (error) {
-      throw new Error(error.message);
+      throw error;
     }
   }
 
@@ -79,7 +79,7 @@ class Tempmethods extends Model {
       }
       return false;
     } catch (error) {
-      throw new Error(error.message);
+      throw error;
     }
   }
 }

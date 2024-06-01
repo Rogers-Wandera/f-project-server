@@ -1,14 +1,19 @@
+const ClassifierClass = require("../app/classifier/classifier");
 const Model = require("./modal");
-
 const format = require("date-fns/format");
-class Refreshtokens extends Model {
+const { v4: uuid } = require("uuid");
+const Modelevaluation = require("./modelevaluationmodel");
+
+const classifier = new ClassifierClass();
+class Trainer extends Model {
   constructor(dbinstance = null) {
     super();
     this.db = dbinstance;
-    this.table = "refreshtokens";
+    this.table = "trainer";
     this.id = null;
     this.userId = null;
-    this.token = null;
+    this.type = null;
+    this.itemsCount = null;
     this.creationDate = null;
     this.createdBy = null;
     this.updatedBy = null;
@@ -25,8 +30,11 @@ class Refreshtokens extends Model {
   get UserId() {
     return this.userId;
   }
-  get Token() {
-    return this.token;
+  get Type() {
+    return this.type;
+  }
+  get ItemsCount() {
+    return this.itemsCount;
   }
   get CreationDate() {
     return this.creationDate;
@@ -56,8 +64,11 @@ class Refreshtokens extends Model {
   set UserId(userId) {
     this.userId = userId;
   }
-  set Token(token) {
-    this.token = token;
+  set Type(type) {
+    this.type = type;
+  }
+  set ItemsCount(itemsCount) {
+    this.itemsCount = itemsCount;
   }
   set CreationDate(creationDate) {
     this.creationDate = creationDate;
@@ -81,7 +92,7 @@ class Refreshtokens extends Model {
     this.isActive = isActive;
   }
   //   view data
-  async ViewRefreshtokens() {
+  async ViewTrainer() {
     try {
       const results = await this.__viewdata();
       return results;
@@ -90,23 +101,18 @@ class Refreshtokens extends Model {
     }
   }
   // view one
-  async ViewSingleRefreshtokens() {
+  async ViewSingleTrainer() {
     try {
-      const token = await this.db.findByConditions(this.table, {
-        userId: this.userId,
-      });
-      if (token.length <= 0) {
-        throw new Error("No token found for this account");
-      }
-      const results = token[0];
+      const results = await this.__viewOne();
       return results;
     } catch (error) {
       throw error;
     }
   }
   //   add function
-  async AddRefreshtokens() {
+  async AddTrainer(token, options) {
     try {
+      const modelevaluation = new Modelevaluation(this.db);
       const User = await this.db.findByConditions("users", {
         id: this.userId,
         isActive: 1,
@@ -114,23 +120,34 @@ class Refreshtokens extends Model {
       if (User.length <= 0) {
         throw new Error("No User found");
       }
-      const findtokenexists = await this.db.findByConditions(this.table, {
-        userId: this.userId,
-      });
-      if (findtokenexists.length > 0) {
-        this.updatedBy = this.userId;
-        this.updatedDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-        this.id = findtokenexists[0].id;
-        this.creationDate = findtokenexists[0].creationDate;
-        return this.__update();
+      this.id = uuid();
+      classifier.token = token;
+      let url = "/audio/train";
+      if (this.type.toLowerCase() === "image") {
+        url = "/classifier/train";
+        const variants = await classifier.checkVariants();
+        classifier.data = { ...options, ...variants };
       }
+      const response = await classifier.trainClassifier(url);
+      this.ItemsCount = response.data.itemsCount;
+      modelevaluation.testAccuracy = response.data.evaluation.Test[0];
+      modelevaluation.testLoss = response.data.evaluation.Test[1];
+      modelevaluation.trainAccuracy = response.data.evaluation.Train[0];
+      modelevaluation.trainLoss = response.data.evaluation.Train[1];
+      modelevaluation.modelName = response.data.modelName;
+      modelevaluation.status = "Current";
+      modelevaluation.trainerId = this.id;
+      modelevaluation.createdBy = this.createdBy;
       this.creationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
       this.isActive = 1;
       const results = await this.__add();
-      return results;
+      if (results["success"] == true) {
+        await modelevaluation.AddModelevaluation(this.type);
+      }
+      return response.data.msg;
     } catch (error) {
       throw error;
     }
   }
 }
-module.exports = Refreshtokens;
+module.exports = Trainer;

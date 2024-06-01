@@ -624,6 +624,9 @@ class ConnectionBuilder extends DBMethodsBuilder {
         queryValues.push(...filterValues);
       }
 
+      const alldata = await this.executeQuery(sql, queryValues);
+      const count = alldata.length;
+
       // Applying sorting
       if (sortBy.length > 0) {
         const sort = sortBy[0].id;
@@ -646,13 +649,14 @@ class ConnectionBuilder extends DBMethodsBuilder {
 
       // Execute query
       const [results] = await this.connection.query(sql, queryValues);
+      const totalPages = Math.ceil(count / limit);
 
       // Return paginated results
       const resultSet = {
         docs: results || [],
-        totalDocs: results ? results.length : 0,
-        totalPages: 0,
-        page: 0,
+        totalDocs: count,
+        totalPages: totalPages,
+        page: page,
       };
 
       return resultSet;

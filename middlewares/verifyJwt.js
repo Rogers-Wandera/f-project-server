@@ -18,6 +18,7 @@ const VerifyJwt = (req, res, next) => {
         id: decoded.user.id,
       };
       req.roles = decoded.user.roles;
+      req.token = token;
       next();
     });
   } catch (error) {

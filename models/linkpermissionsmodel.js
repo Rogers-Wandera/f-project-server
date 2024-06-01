@@ -112,7 +112,7 @@ class Linkpermissions extends Model {
       );
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   // view one
@@ -121,7 +121,7 @@ class Linkpermissions extends Model {
       const results = await this.__viewOne();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   add function
@@ -135,7 +135,7 @@ class Linkpermissions extends Model {
       const results = await this.__add();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   update function
@@ -145,7 +145,7 @@ class Linkpermissions extends Model {
       const results = await this.__update();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   delete function
@@ -156,7 +156,7 @@ class Linkpermissions extends Model {
 
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -167,7 +167,7 @@ class Linkpermissions extends Model {
       });
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 }

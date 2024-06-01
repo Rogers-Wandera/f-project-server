@@ -33,7 +33,6 @@ const AddSystemroles = async (req, res) => {
     systemroles.Value = value;
     systemroles.Released = released;
     systemroles.Description = description;
-
     systemroles.createdBy = req.user.id;
     const results = await systemroles.AddSystemroles();
     if (results?.success == false) {

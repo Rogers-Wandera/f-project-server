@@ -62,7 +62,7 @@ class Modules extends Model {
       );
       return exists;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -99,7 +99,7 @@ class Modules extends Model {
       }
       return false;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   async AddModules() {
@@ -180,7 +180,7 @@ class Modules extends Model {
       const result = await this.__update();
       return result;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -195,7 +195,7 @@ class Modules extends Model {
       }
       return lastposition;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -213,7 +213,7 @@ class Modules extends Model {
       }
       return [];
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 }

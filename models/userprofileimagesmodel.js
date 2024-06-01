@@ -94,7 +94,7 @@ class Userprofileimages extends Model {
       const results = await this.__viewdata();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   // view one
@@ -103,7 +103,7 @@ class Userprofileimages extends Model {
       const results = await this.__viewOne();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   async findImageExists() {
@@ -141,7 +141,7 @@ class Userprofileimages extends Model {
       const results = await this.__add();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   update function
@@ -158,7 +158,7 @@ class Userprofileimages extends Model {
       const results = await this.__update();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   delete function
@@ -168,7 +168,7 @@ class Userprofileimages extends Model {
       const results = await this.__delete();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 }

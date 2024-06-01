@@ -101,7 +101,7 @@ class Systemroles extends Model {
       const results = await this.__viewdata();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   // view one
@@ -110,7 +110,7 @@ class Systemroles extends Model {
       const results = await this.__viewOne();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   add function
@@ -128,7 +128,7 @@ class Systemroles extends Model {
       const results = await this.__add();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   update function
@@ -146,7 +146,7 @@ class Systemroles extends Model {
       const results = await this.__update();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   delete function
@@ -157,7 +157,7 @@ class Systemroles extends Model {
 
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -171,7 +171,7 @@ class Systemroles extends Model {
       const results = await this.db.executeQuery(sql, [userId]);
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 }

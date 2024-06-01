@@ -23,7 +23,6 @@ const { HandleCrons } = require("./utils/crons");
 const MainRouter = require("./routes");
 const path = require("path");
 const { HandleOnline } = require("./sockets/online");
-const { TokenExpirey } = require("./sockets/tokenexpiry");
 
 app.use(logger);
 app.use(credentials);
@@ -70,7 +69,6 @@ io.on("connection", async (socket) => {
   if (socketids.length > 0) {
     HandleOnline(socket, io).onlineusers(database);
     HandleOnline(socket, io).logoutsuer(database);
-    TokenExpirey(socket, io);
     socket.on("clientusersrefresh", () => {
       io.emit("refreshusers", {});
     });

@@ -93,7 +93,7 @@ class ModuleLinks extends Model {
       }
       return exists;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -111,7 +111,7 @@ class ModuleLinks extends Model {
         return response;
       }
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -193,7 +193,7 @@ class ModuleLinks extends Model {
       const results = await this.__add();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -210,7 +210,7 @@ class ModuleLinks extends Model {
       }
       return { success: false };
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -222,7 +222,7 @@ class ModuleLinks extends Model {
       }
       return { success: false };
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -232,7 +232,7 @@ class ModuleLinks extends Model {
       const data = await this.__viewCustomQueryPaginate(query, [this.moduleId]);
       return data;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -249,7 +249,7 @@ class ModuleLinks extends Model {
       }
       return lastposition;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 }

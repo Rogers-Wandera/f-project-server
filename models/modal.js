@@ -20,7 +20,6 @@ class Model {
       if (
         typeof this[key] !== "function" &&
         key !== "table" &&
-        key !== "id" &&
         key !== "db" &&
         key !== "limit" &&
         key !== "page" &&
