@@ -13,7 +13,13 @@ const ModulesRouter = require("./adminroutes/modules");
 const LoginRoute = require("./auth/loginroute");
 const LinkrolesRouter = require("./adminroutes/linkrolesroute.js");
 const PositionsRouter = require("./adminroutes/positionsroute.js");
-const UserprofileimagesRouter = require("./auth/userprofileimagesroute.js")
+const UserprofileimagesRouter = require("./auth/userprofileimagesroute.js");
+const SystemrolesRouter = require("./auth/systemrolesroute.js");
+const LinkpermissionsRouter = require("./adminroutes/linkpermissionsroute.js");
+const RolepermissionsRouter = require("./adminroutes/rolepermissionsroute.js");
+const RefreshtokensRouter = require("./auth/refreshtokensroute.js");
+const TrainerRouter = require("./recognition/trainerroute.js");
+const ModelevaluationRouter = require("./recognition/modelevaluationroute.js");
 // end of routes imports
 
 const router = require("express").Router();
@@ -34,6 +40,12 @@ router.use(`/modules`, ModulesRouter);
 router.use(`/modules/linkroles`, LinkrolesRouter);
 router.use(`/positions`, PositionsRouter);
 router.use(`/userprofiles`, UserprofileimagesRouter);
+router.use(`/sysroles`, SystemrolesRouter);
+router.use(`/modulepermission`, LinkpermissionsRouter);
+router.use(`/rolepermission`, RolepermissionsRouter);
+router.use(`/refreshtoken`, RefreshtokensRouter);
+router.use(`/recognition`, TrainerRouter);
+router.use(`/modeleval`, ModelevaluationRouter);
 //end of routes
 
 module.exports = router;

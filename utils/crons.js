@@ -3,6 +3,7 @@ const { checkExpireDate } = require("../helpers/helperfuns");
 const Linkroles = require("../models/linkrolesmodel");
 const cronjob = require("node-cron");
 const { RemoveFolder } = require("../helpers/crons");
+const Rolepermissions = require("../models/rolepermissionsmodel");
 
 const InsertSchedule = async (db, records, tablename, action) => {
   try {
@@ -61,11 +62,13 @@ const CheckAccessRights = async (db) => {
 const HandleExpiredLinkRoles = async (io, database) => {
   try {
     const linkroles = new Linkroles(database);
+    const linkpermissions = new Rolepermissions(database);
     const data = await linkroles.getExpiredRoles();
     if (data.length > 0) {
       data.forEach(async (row) => {
         linkroles.Id = row.id;
         await linkroles.DeleteLinkroles();
+        await linkpermissions.deleteRolePermission(row.id);
         const userdata = await linkroles.getUserModules(row.userId);
         io.emit("roleemitter", { userId: row.userId, data: userdata });
       });
@@ -81,6 +84,9 @@ const HandleCrons = (database, io) => {
     cronjob.schedule("* * * * *", async () => {
       await HandleExpiredLinkRoles(io, database);
     });
+    // // To run every 5 minutes
+    // cronjob.schedule("*/5 * * * *", () => {
+    // });
     // hourly cron
     cronjob.schedule("0 * * * *", async () => {
       await CheckAccessRights(database);
@@ -91,6 +97,8 @@ const HandleCrons = (database, io) => {
       await database.DeleteRecycleBinData();
       RemoveFolder("copy");
       RemoveFolder("recordings");
+      RemoveFolder("converted");
+      RemoveFolder("deletedrecords");
     });
   } catch (error) {
     console.log(error);

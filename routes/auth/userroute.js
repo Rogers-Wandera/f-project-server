@@ -5,6 +5,8 @@ const {
   userdetails,
   getUsers,
   deleteUser,
+  GetSingleUserDetails,
+  AddProfileImage,
 } = require("../../controllers/auth/userdetails");
 const VerifyEmail = require("../../middlewares/verifyEmail");
 const VerifyRoles = require("../../middlewares/verifyRoles");
@@ -22,5 +24,15 @@ router
 
 router
   .route("/users/:userId")
-  .delete(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), deleteUser);
+  .delete(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), deleteUser)
+  .get(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin, USER_ROLES.User),
+    GetSingleUserDetails
+  );
+
+router
+  .route("/users/profile/upload/:userId")
+  .post(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.User), AddProfileImage);
 module.exports = router;

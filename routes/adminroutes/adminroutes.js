@@ -55,7 +55,12 @@ router
   );
 router
   .route("/roles/:userId")
-  .get(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), GetUserRoles);
+  .get(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin, USER_ROLES.User),
+    GetUserRoles
+  );
 
 router
   .route("/roles/routes/:userId")

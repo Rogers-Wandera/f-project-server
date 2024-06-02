@@ -12,6 +12,8 @@ class ModuleLinks extends Model {
     this.deleted_at = null;
     this.creationDate = null;
     this.isActive = null;
+    this.render = null;
+    this.released = null;
     this.db = dbinstance;
   }
 
@@ -31,12 +33,23 @@ class ModuleLinks extends Model {
   get Position() {
     return this.position;
   }
+
+  get Released() {
+    return this.released;
+  }
+
+  get Render() {
+    return this.render;
+  }
   //   setters
   set Id(id) {
     this.id = id;
   }
   set ModuleId(moduleId) {
     this.moduleId = moduleId;
+  }
+  set Released(released) {
+    this.released = released;
   }
   set LinkName(linkName) {
     this.linkname = linkName;
@@ -46,6 +59,10 @@ class ModuleLinks extends Model {
   }
   set Position(position) {
     this.position = position;
+  }
+
+  set Render(render) {
+    this.render = render;
   }
 
   async findLinkByName(active = 1, action = "add") {
@@ -76,7 +93,7 @@ class ModuleLinks extends Model {
       }
       return exists;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -94,7 +111,7 @@ class ModuleLinks extends Model {
         return response;
       }
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -176,7 +193,7 @@ class ModuleLinks extends Model {
       const results = await this.__add();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -193,7 +210,7 @@ class ModuleLinks extends Model {
       }
       return { success: false };
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -205,7 +222,7 @@ class ModuleLinks extends Model {
       }
       return { success: false };
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -215,7 +232,7 @@ class ModuleLinks extends Model {
       const data = await this.__viewCustomQueryPaginate(query, [this.moduleId]);
       return data;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -232,7 +249,7 @@ class ModuleLinks extends Model {
       }
       return lastposition;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 }

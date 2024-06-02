@@ -14,6 +14,7 @@ const {
   DeleteModuleLinks,
   GetModuleLinks,
   GetLastModuleLinkPosition,
+  getSelectModules,
 } = require("../../controllers/admin/admincontrollers");
 const { validateSchema } = require("../../middlewares/validationAuth");
 const {
@@ -87,6 +88,15 @@ router
     VerifyEmail,
     VerifyRoles(USER_ROLES.Admin, USER_ROLES.Programmer),
     GetLastModuleLinkPosition
+  );
+
+router
+  .route("/modules/selects/viewall")
+  .get(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin, USER_ROLES.Programmer),
+    getSelectModules
   );
 
 module.exports = router;

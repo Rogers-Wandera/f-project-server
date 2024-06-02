@@ -9,12 +9,12 @@ const createPersonSchema = joi
       "string.empty": "Last name cannot be empty",
       "any.required": "Last name is required",
     }),
-    status: joi.string().valid("alive", "deceased").required().messages({
+    status: joi.string().valid("Alive", "Deceased").required().messages({
       "string.empty": "Status cannot be empty",
       "any.required": "Status is required",
       "any.only": "Status must be alive or deceased",
     }),
-    gender: joi.string().valid("male", "female").required().messages({
+    gender: joi.string().valid("Male", "Female").required().messages({
       "string.empty": "Gender cannot be empty",
       "any.required": "Gender is required",
       "any.only": "Gender must be male or female",
@@ -24,7 +24,7 @@ const createPersonSchema = joi
       .length(14)
       .pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$/)
       .custom((value, helpers) => {
-        const specifiedGender = helpers.prefs.context.gender;
+        const specifiedGender = helpers.prefs.context.gender.toLowerCase();
         const expectedGenderCode = specifiedGender === "male" ? "CM" : "CF";
         const genderCode = value.substring(0, 2).toUpperCase();
         if (genderCode !== expectedGenderCode) {
@@ -135,6 +135,25 @@ const PersonImageQueryParams = joi.object({
   }),
 });
 
+const deleteschema = joi.object({
+  imageId: joi.string().required().messages({
+    "string.empty": "Image id cannot be empty",
+    "any.required": "Image id is required param",
+  }),
+  publicId: joi.string().required().messages({
+    "string.empty": "Public id cannot be empty",
+    "any.required": "Public id is required param",
+  }),
+});
+
+const deletemanyimagesschema = joi.object({
+  data: joi.array().items(deleteschema).min(1).required().messages({
+    "any.required": "Data is required",
+    "array.min": "At least one image is required",
+    "array.empty": "Data cannot be empty",
+  }),
+});
+
 const PersonImageMetaQueryParams = joi.object({
   metaId: joi.string().required().messages({
     "string.empty": "Meta id cannot be empty",
@@ -173,6 +192,24 @@ const PersonAudioSchema = joi.object({
   }),
 });
 
+const PersonMultipleAudioSchema = joi.object({
+  audios: joi
+    .array()
+    .items(
+      PersonAudioObject.required().messages({
+        "string.empty": "Audio cannot be empty",
+        "any.required": "Audio is required",
+      })
+    )
+    .min(1)
+    .required()
+    .messages({
+      "array.empty": "Audios cannot be empty",
+      "any.required": "Audios is required",
+      "array.min": "At least one Audio is required",
+    }),
+});
+
 const PersonAudioParams = joi.object({
   audioId: joi.string().required().messages({
     "string.empty": "Audio id cannot be empty",
@@ -192,4 +229,6 @@ module.exports = {
   PersonAudioSchema,
   PersonAudioParams,
   imagesArray,
+  deletemanyimagesschema,
+  PersonMultipleAudioSchema,
 };

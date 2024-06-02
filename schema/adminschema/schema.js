@@ -227,10 +227,9 @@ const createTableSchema = joi.object({
 });
 
 const AddRoleSchema = joi.object({
-  role: joi.string().valid("Admin", "User", "Editor").required().messages({
+  roleId: joi.number().positive().required().messages({
     "string.empty": "Role is required",
     "any.required": "Role is required",
-    "any.only": "Role must be Admin, User or Editor",
   }),
   userId: joi.string().required().messages({
     "string.empty": "User id is required",

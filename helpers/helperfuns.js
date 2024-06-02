@@ -3,6 +3,7 @@ const { isBefore, parse, format } = require("date-fns");
 const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
+const CryptoJs = require("crypto-js");
 const { sendEmail } = require("../controllers/sendEmail");
 
 const directory = path.join(__dirname, "..", "templates", "mailtemp.ejs");
@@ -10,6 +11,18 @@ const algorithm = "aes-256-cbc";
 const initVector = crypto.randomBytes(32);
 const secret_key = crypto.randomBytes(64);
 
+const encryptData = (input) => {
+  const secretKey = process.env.ENCRYPTION_KEY;
+  const cipherInput = CryptoJs.AES.encrypt(input, secretKey).toString();
+  return cipherInput;
+};
+
+const decryptData = (encrypted) => {
+  const secretKey = process.env.ENCRYPTION_KEY;
+  const bytes = CryptoJs.AES.decrypt(encrypted, secretKey);
+  const ciphedInput = bytes.toString(CryptoJs.enc.Utf8);
+  return ciphedInput;
+};
 function encrypt(data) {
   const cipher = crypto.createCipheriv(algorithm, secret_key, initVector);
   let encrypted = cipher.update(data, "utf-8", "hex");
@@ -63,4 +76,6 @@ module.exports = {
   checkExpireDate,
   SendEmailLink,
   GetAllRoutesFromRouter,
+  encryptData,
+  decryptData,
 };

@@ -1,9 +1,28 @@
+const { format, parseISO } = require("date-fns");
 const Linkroles = require("../../models/linkrolesmodel");
 const ViewLinkroles = async (req, res) => {
   try {
     const linkroles = new Linkroles(req.db);
     const data = await linkroles.ViewLinkroles();
     res.status(200).json({ data: data });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const getUserLinkRoles = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { start, size, filters, globalFilter, sorting } = req.query;
+    const linkroles = new Linkroles(req.db);
+    linkroles.userId = userId;
+    linkroles.page = parseInt(start);
+    linkroles.limit = parseInt(size);
+    linkroles.filters = JSON.parse(filters);
+    linkroles.globalFilter = globalFilter;
+    linkroles.sortBy = JSON.parse(sorting);
+    const assigned = await linkroles.getAssignedRoles();
+    res.status(200).json(assigned);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -41,21 +60,19 @@ const AddLinkroles = async (req, res) => {
 };
 const UpdateLinkroles = async (req, res) => {
   try {
-    const { linkId, userId, expireDate } = req.body;
+    const { expireDate } = req.body;
     const { linkroleId } = req.params;
     const linkroles = new Linkroles(req.db);
     linkroles.Id = linkroleId;
-    linkroles.LinkId = linkId;
-    linkroles.UserId = userId;
-    linkroles.ExpireDate = expireDate;
-
+    linkroles.ExpireDate = format(parseISO(expireDate), "yyyy-MM-dd HH:mm");
     linkroles.updatedBy = req.user.id;
+    const linkrole = await linkroles.__find();
     const results = await linkroles.UpdateLinkroles();
     if (results?.success == false) {
       return res.status(400).json({ msg: "something went wrong" });
     }
-    const data = await linkroles.getUserModules(userId);
-    req.io.emit("roleemitter", { userId: userId, data: data });
+    const data = await linkroles.getUserModules(linkrole[0].userId);
+    req.io.emit("roleemitter", { userId: linkrole[0].userId, data: data });
     res.status(200).json({ msg: "Linkroles updated successfully" });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -86,7 +103,19 @@ const getUserModules = async (req, res) => {
     const data = await linkroles.getUserModules(userId);
     res.status(200).json(data);
   } catch (error) {
-    throw new Error(error);
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const getUserRolesTypes = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const linkroles = new Linkroles(req.db);
+    linkroles.userId = userId;
+    const toassign = await linkroles.getToAssignRoles();
+    res.status(200).json(toassign);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 };
 module.exports = {
@@ -96,4 +125,6 @@ module.exports = {
   ViewLinkroles,
   ViewSingleLinkroles,
   getUserModules,
+  getUserRolesTypes,
+  getUserLinkRoles,
 };

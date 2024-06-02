@@ -1,3 +1,4 @@
+const { logEvent } = require("../../middlewares/logs");
 const DBMethodsBuilder = require("./methodsbuilder");
 const { format, differenceInDays } = require("date-fns");
 
@@ -219,9 +220,29 @@ class ConnectionBuilder extends DBMethodsBuilder {
         throw new Error("Table and conditions are required or invalid");
       }
       const whereclause = Object.keys(conditions)
-        .map((column) => `${column} = ?`)
+        .map((column) => {
+          let clause = `${column} = ?`;
+          // check the condition if &ne
+          const clausecondition = conditions[column];
+          if (typeof clausecondition === "object") {
+            // check the condition if $ne
+            if (clausecondition?.$ne) {
+              clause = `${column} != ?`;
+            }
+          }
+          return clause;
+        })
         .join(" AND ");
-      const values = Object.values(conditions);
+      const values = Object.values(conditions).map((val) => {
+        let formattedval = val;
+        if (typeof val === "object") {
+          // check the condition if $ne
+          if (val?.$ne) {
+            formattedval = val.$ne;
+          }
+        }
+        return formattedval;
+      });
       const sql = `SELECT *FROM ?? WHERE ${whereclause}`;
       const [results] = await this.connection.query(sql, [table, ...values]);
       return results;
@@ -442,7 +463,6 @@ class ConnectionBuilder extends DBMethodsBuilder {
       sql += " OFFSET ?";
       queryvalues.push(offsetval);
 
-      console.log(sql);
       const count = await this.countRecords(mainTable);
       const totalPages = Math.ceil(count.count / limit);
       const [results] = await this.connection.query(sql, queryvalues);
@@ -604,6 +624,9 @@ class ConnectionBuilder extends DBMethodsBuilder {
         queryValues.push(...filterValues);
       }
 
+      const alldata = await this.executeQuery(sql, queryValues);
+      const count = alldata.length;
+
       // Applying sorting
       if (sortBy.length > 0) {
         const sort = sortBy[0].id;
@@ -626,13 +649,14 @@ class ConnectionBuilder extends DBMethodsBuilder {
 
       // Execute query
       const [results] = await this.connection.query(sql, queryValues);
+      const totalPages = Math.ceil(count / limit);
 
       // Return paginated results
       const resultSet = {
         docs: results || [],
-        totalDocs: results ? results.length : 0,
-        totalPages: 0,
-        page: 0,
+        totalDocs: count,
+        totalPages: totalPages,
+        page: page,
       };
 
       return resultSet;

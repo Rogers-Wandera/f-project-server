@@ -5,7 +5,7 @@ const { sendEmail } = require("../controllers/sendEmail");
 
 const directory = path.join(__dirname, "..", "templates", "verify.ejs");
 
-const sendVerification = async (email, name, link) => {
+const sendVerification = async (email, name, link, additionalhtml = "") => {
   try {
     const template = fs.readFileSync(directory, "utf-8");
     const emailData = {
@@ -13,6 +13,7 @@ const sendVerification = async (email, name, link) => {
       serverData: "Please confirm registration",
       senderName: "C-CHAT",
       link: link,
+      moredata: [...additionalhtml],
     };
     const emailHtml = ejs.render(template, emailData);
     const response = await sendEmail(email, "Verify Your Email", emailHtml);

@@ -44,7 +44,15 @@ const Register = async (req, res) => {
     if (!result?.success) {
       return res.status(500).json({ msg: "Something went wrong try again" });
     }
-    const roles = { userId: userid, isActive: 1 };
+    const roles = {
+      userId: userid,
+      isActive: 1,
+      createdBy: req.user.id || "",
+    };
+    let additionaldata = "";
+    if (adminCreated == 1) {
+      additionaldata = [`Please login using this password ${password}`];
+    }
     const tokendb = {
       userId: userid,
       token: token,
@@ -57,7 +65,8 @@ const Register = async (req, res) => {
     const response = await SendVerification(
       email,
       `${firstname} ${lastname}`,
-      verify
+      verify,
+      additionaldata
     );
     res
       .status(200)

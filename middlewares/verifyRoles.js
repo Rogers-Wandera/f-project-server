@@ -28,9 +28,12 @@ const VerifyRoles = (...allowedRoles) => {
       const methods = [];
 
       // check to see if the role and method exist on the temproles
+
       if (findTempRoles.length > 0) {
+        findTempRoles.forEach((role) => {
+          methods.push(role.method);
+        });
         for (let i = 0; i < findTempRoles.length; i++) {
-          methods.push(findTempRoles[i].method);
           if (findTempRoles[i].roleValue === urlpath) {
             if (methods.includes(method)) {
               urlExists = findTempRoles[i];
@@ -40,23 +43,22 @@ const VerifyRoles = (...allowedRoles) => {
           }
         }
       }
-
       let expired = false;
       // if the role is true and has expired we send a 401 error
       if (urlExists) {
         // check if the role has expired
         expired = checkExpireDate(urlExists.expireTime);
         if (expired) {
-          return res
-            .status(401)
-            .json({ msg: "Your access rights have expired contact admin" });
+          return res.status(401).json({
+            msg: "Your access rights have expired contact Authorized personel",
+          });
         }
       } else {
         // else we check
         if (!checkResults) {
-          return res
-            .status(401)
-            .json({ msg: "This is a protected Route. Contact Admin" });
+          return res.status(401).json({
+            msg: "This is a protected Route. Contact Authorized personel",
+          });
         }
       }
       // log the user and what he or she is accessing

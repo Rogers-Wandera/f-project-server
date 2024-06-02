@@ -16,6 +16,7 @@ class Userprofileimages extends Model {
     this.deleted_at = null;
     this.deletedBy = null;
     this.isActive = null;
+    this.public_id = null;
   }
 
   //   getters
@@ -27,6 +28,10 @@ class Userprofileimages extends Model {
   }
   get UserId() {
     return this.userId;
+  }
+
+  get Public_id() {
+    return this.public_id;
   }
   get CreationDate() {
     return this.creationDate;
@@ -80,13 +85,16 @@ class Userprofileimages extends Model {
   set IsActive(isActive) {
     this.isActive = isActive;
   }
+  set Public_id(public_id) {
+    this.public_id = public_id;
+  }
   //   view data
   async ViewUserprofileimages() {
     try {
       const results = await this.__viewdata();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   // view one
@@ -95,25 +103,45 @@ class Userprofileimages extends Model {
       const results = await this.__viewOne();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
+    }
+  }
+  async findImageExists() {
+    try {
+      const results = await this.db.findByConditions("userprofileimages", {
+        userId: this.userId,
+        isActive: 1,
+      });
+      if (results.length > 0) {
+        return results[0];
+      }
+      return [];
+    } catch (error) {
+      throw new Error(error.message);
     }
   }
   //   add function
   async AddUserprofileimages() {
     try {
-      const User = await this.db.findByConditions("users", {
-        id: this.userId,
-        isActive: 1,
-      });
-      if (User.length <= 0) {
-        throw new Error("No User found");
+      const exists = await this.findImageExists();
+      if (Object.keys(exists).length > 0) {
+        const id = exists.id;
+        this.id = id;
+        const response = await this.db.findOneAndUpdate(
+          this.table,
+          {
+            id: this.id,
+          },
+          { public_id: this.public_id, image: this.image }
+        );
+        return response;
       }
       this.creationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
       this.isActive = 1;
       const results = await this.__add();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   update function
@@ -130,7 +158,7 @@ class Userprofileimages extends Model {
       const results = await this.__update();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   delete function
@@ -140,7 +168,7 @@ class Userprofileimages extends Model {
       const results = await this.__delete();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 }

@@ -2,6 +2,7 @@ const { format } = require("date-fns");
 const FileUploader = require("../../../conn/uploader");
 const uploader = new FileUploader();
 const { v4: uuidv4 } = require("uuid");
+const Modal = require("../../../models/modal");
 
 const imageotions = {
   use_filename: true,
@@ -89,10 +90,38 @@ const DeletePersonImage = async (req, res) => {
     } else {
       // delete image from the cloud
       const { publicId } = imageExists[0];
-      const results = await uploader.deleteCloudinaryImage(publicId);
+      const results = await uploader.deleteCloudinaryImage(publicId, "image");
       console.log(results);
     }
     res.status(200).json({ msg: "Image deleted successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const DeleteMultiplePersonImage = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    const { data } = req.body;
+    // find the person exists
+    const personExists = await req.db.findByConditions("person", {
+      id: personId,
+    });
+    if (personExists.length <= 0) {
+      return res.status(400).json({ error: "Person not found" });
+    }
+    const ids = data.map((item) => item.imageId);
+    const results = await req.db.deleteMany("imagedata", ids);
+    if (!results) {
+      return res.status(500).json({ error: "Something went wrong" });
+    } else {
+      // delete image from the cloud
+      const publicIds = data.map((item) => item.publicId);
+      publicIds.forEach(async (publicId) => {
+        await uploader.deleteCloudinaryImage(publicId, "image");
+      });
+    }
+    res.status(200).json({ msg: "Images deleted successfully" });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -111,7 +140,7 @@ const GetPersonImages = async (req, res) => {
       personId,
       isActive: 1,
     });
-    res.status(200).json({ images });
+    res.status(200).json(images);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -289,6 +318,50 @@ const getImagesInFolder = async (req, res) => {
   }
 };
 
+const UploadTakenImage = async (req, res) => {
+  try {
+    const { personId } = req.params;
+    const { image } = req.body;
+    const matches = image.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      throw new Error("Invalid base64 string");
+    }
+    const personmodal = new Modal(req.db);
+    personmodal.id = personId;
+    personmodal.table = "person";
+    const person = personmodal.__viewOne();
+    const newoptions = {
+      ...imageotions,
+      folder: `persons/${personId}`,
+      userId: req.user.id,
+      alt: "person image",
+      resource_type: "image",
+    };
+    const public_id = uuidv4();
+    const imagepath = { path: image, public_id };
+    uploader.options = newoptions;
+    const uploaded = await uploader.singleUploadCloudinary(
+      imagepath,
+      newoptions
+    );
+    const imageObj = {
+      userId: req.user.id,
+      personId: personId,
+      imageUrl: uploaded.url,
+      timestamp: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+      isActive: 1,
+      publicId: uploaded.public_id,
+    };
+    const response = await req.db.insertOne("imagedata", imageObj);
+    if (!response) {
+      return res.status(500).json({ error: "Something went wrong" });
+    }
+    res.status(200).json({ msg: "Image uploaded successfully" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 module.exports = {
   AddPersonImage,
   DeletePersonImage,
@@ -298,4 +371,6 @@ module.exports = {
   DeletePersonImageMeta,
   GetPersonImageMeta,
   getImagesInFolder,
+  DeleteMultiplePersonImage,
+  UploadTakenImage,
 };

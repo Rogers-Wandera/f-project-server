@@ -62,7 +62,7 @@ class Modules extends Model {
       );
       return exists;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -99,7 +99,7 @@ class Modules extends Model {
       }
       return false;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   async AddModules() {
@@ -180,7 +180,7 @@ class Modules extends Model {
       const result = await this.__update();
       return result;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -195,7 +195,25 @@ class Modules extends Model {
       }
       return lastposition;
     } catch (error) {
-      throw new Error(error);
+      throw error;
+    }
+  }
+
+  async getSelectModules() {
+    try {
+      const data = await this.db.findAll(this.table);
+      if (data.length > 0) {
+        const formatted = data.map((item) => {
+          return {
+            value: item.id.toString(),
+            label: item.name,
+          };
+        });
+        return formatted;
+      }
+      return [];
+    } catch (error) {
+      throw error;
     }
   }
 }

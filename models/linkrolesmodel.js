@@ -113,7 +113,7 @@ class Linkroles extends Model {
       }
       return true;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   view data
@@ -122,7 +122,7 @@ class Linkroles extends Model {
       const results = await this.__viewdata();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   // view one
@@ -131,7 +131,7 @@ class Linkroles extends Model {
       const results = await this.__viewOne();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   add function
@@ -153,28 +153,18 @@ class Linkroles extends Model {
       const results = await this.__add();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   update function
   async UpdateLinkroles() {
     try {
-      const Modulelink = new modulelinks(this.db);
-      const User = await this.db.findByConditions("users", {
-        id: this.userId,
-        isActive: 1,
-      });
-      Modulelink.Id = this.linkId;
-      await Modulelink.__find();
-      if (User.length <= 0) {
-        throw new Error("No User found");
-      }
       await this.findRoleExistsUser("update");
       this.updatedDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
       const results = await this.__update();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
   //   delete function
@@ -184,7 +174,7 @@ class Linkroles extends Model {
       const results = await this.__delete();
       return results;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -211,6 +201,7 @@ class Linkroles extends Model {
             linkname: item.linkname,
             route: item.route,
             expired: item.expired,
+            render: item.render,
           });
           return acc;
         }, {});
@@ -218,7 +209,7 @@ class Linkroles extends Model {
       }
       return data;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 
@@ -229,7 +220,29 @@ class Linkroles extends Model {
       });
       return data;
     } catch (error) {
-      throw new Error(error);
+      throw error;
+    }
+  }
+
+  async getAssignedRoles() {
+    try {
+      const query = `SELECT *FROM vw_module_roles WHERE userId = ?;`;
+      const data = await this.__viewCustomQueryPaginate(query, [this.userId]);
+      return data;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async getToAssignRoles() {
+    try {
+      const query = `SELECT *FROM vw_module_links ml
+      WHERE ml.id NOT IN (SELECT linkId FROM vw_module_roles mr WHERE mr.userId = ?)
+      AND ml.isActive = 1 AND ml.released = 1;`;
+      const data = await this.db.executeQuery(query, [this.userId]);
+      return data;
+    } catch (error) {
+      throw new Error(error.message);
     }
   }
 }

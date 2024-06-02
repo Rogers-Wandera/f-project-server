@@ -20,16 +20,26 @@ const {
   UploadAudioFromLocal,
   GetPersonAudioCloud,
   DeleteAudioCloudRecord,
+  UploadMultiple,
+  UploadMultipleAudioFromLocal,
+  DeletePersonAudio,
 } = require("../../controllers/personcontrollers/personaudios/personaudioscontroller");
 const {
   PersonAudioSchema,
   PersonAudioParams,
   PersonMetaParams,
+  PersonMultipleAudioSchema,
 } = require("../../schema/personschema/schema");
 
 router
   .route("/:personId")
-  .get(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), GetPersonAudio);
+  .get(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), GetPersonAudio)
+  .delete(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin),
+    DeletePersonAudio
+  );
 router
   .route("/startrecord/:personId")
   .post(
@@ -73,6 +83,16 @@ router
   .delete(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), CancelUpload);
 
 router
+  .route("/multiple/:personId")
+  .post(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin),
+    validateSchema(PersonMultipleAudioSchema),
+    UploadMultiple
+  );
+
+router
   .route("/uploadlocal")
   .post(
     VerifyJwt,
@@ -80,6 +100,16 @@ router
     VerifyRoles(USER_ROLES.Admin),
     validateQueryParamsSchema(PersonMetaParams),
     UploadAudioFromLocal
+  );
+
+router
+  .route("/uploadlocalmultiple")
+  .post(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin),
+    validateQueryParamsSchema(PersonMetaParams),
+    UploadMultipleAudioFromLocal
   );
 
 router

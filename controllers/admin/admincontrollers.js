@@ -1,4 +1,3 @@
-const USER_ROLES = require("../../conn/rolesList");
 const { format } = require("date-fns");
 const FileUploader = require("../../conn/uploader");
 const Modules = require("../../models/modulesmodel");
@@ -7,6 +6,7 @@ const CreateModelClass = require("../../builder/classbuilder");
 const CreateSchema = require("../../builder/schemabuilder");
 const CreateClassController = require("../../builder/controllerbuilder");
 const CreateRoutes = require("../../builder/routesbuilder");
+const Systemroles = require("../../models/systemrolesmodel");
 const fileuploader = new FileUploader();
 
 const GetUserRoles = async (req, res) => {
@@ -18,7 +18,7 @@ const GetUserRoles = async (req, res) => {
     if (!findUserExists) {
       return res.status(400).json({ error: "User not found" });
     }
-    const roles = await req.db.findByConditions("roles", {
+    const roles = await req.db.findByConditions("user_roles", {
       userId: userId,
       isActive: 1,
     });
@@ -30,34 +30,36 @@ const GetUserRoles = async (req, res) => {
 
 const AddRoles = async (req, res) => {
   try {
-    const { userId, role } = req.body;
+    const systemroles = new Systemroles(req.db);
+    const { userId, roleId } = req.body;
     const findUserExists = await req.db.findOne("users", {
       id: userId,
     });
     if (!findUserExists) {
       return res.status(400).json({ error: "User not found" });
     }
-    const actualRole = USER_ROLES[role];
-    if (!actualRole) {
-      return res.status(400).json({ error: "Invalid role" });
-    }
+    systemroles.Id = roleId;
+    const actualRole = await systemroles.ViewSingleSystemroles();
+    // const actualRole = USER_ROLES[role];
     const findRoleExists = await req.db.findByConditions("roles", {
-      role: actualRole,
+      roleId: actualRole.id,
       userId: findUserExists.id,
+      isActive: 1,
     });
     if (findRoleExists.length > 0) {
       return res.status(400).json({ error: "Role already exists" });
     }
     const result = await req.db.insertOne("roles", {
       userId: userId,
-      role: actualRole,
-      rolename: role,
+      roleId: roleId,
       isActive: 1,
+      createdBy: req.user.id,
     });
     if (!result?.success) {
       return res.status(500).json({ error: "Something went wrong" });
     }
     res.status(200).json({ msg: "Role added successfully" });
+    req.io.emit("loguserout", { userId: userId });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -65,19 +67,18 @@ const AddRoles = async (req, res) => {
 
 const RemoveRole = async (req, res) => {
   try {
-    const { userId, role } = req.body;
+    const systemroles = new Systemroles(req.db);
+    const { userId, roleId } = req.body;
     const findUserExists = await req.db.findOne("users", {
       id: userId,
     });
+    systemroles.Id = roleId;
     if (!findUserExists) {
       return res.status(400).json({ error: "User not found" });
     }
-    const actualRole = USER_ROLES[role];
-    if (!actualRole) {
-      return res.status(400).json({ error: "Invalid role" });
-    }
-    const findRoleExists = await req.db.findByConditions("roles", {
-      role: actualRole,
+    const actualRole = await systemroles.ViewSingleSystemroles();
+    const findRoleExists = await req.db.findByConditions("user_roles", {
+      roleId: actualRole.id,
       userId: findUserExists.id,
     });
     if (findRoleExists.length <= 0) {
@@ -86,12 +87,13 @@ const RemoveRole = async (req, res) => {
     if (findRoleExists[0].rolename === "User") {
       return res.status(400).json({ error: "Cannot remove user role" });
     }
-    const result = await req.db.deleteOne("roles", {
+    const result = await req.db.softDelete("roles", {
       id: findRoleExists[0].id,
     });
     if (!result) {
       return res.status(500).json({ error: "Something went wrong" });
     }
+    req.io.emit("loguserout", { userId: userId });
     res.status(200).json({ msg: "Role removed successfully" });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -415,7 +417,7 @@ const GetModules = async (req, res) => {
 
 const AddModuleLinks = async (req, res) => {
   try {
-    const { linkname, route } = req.body;
+    const { linkname, route, render, released } = req.body;
     const { moduleId } = req.params;
     const modules = new Modules(req.db);
     const modulelinks = new ModuleLinks(req.db);
@@ -423,7 +425,9 @@ const AddModuleLinks = async (req, res) => {
     await modules.__find();
     modulelinks.ModuleId = moduleId;
     modulelinks.LinkName = linkname;
+    modulelinks.Render = render;
     modulelinks.Route = route;
+    modulelinks.Released = released;
     const position = await modulelinks.CalculateNextPosition(moduleId);
     modulelinks.Position = position;
     const response = await modulelinks.AddLink();
@@ -438,7 +442,7 @@ const AddModuleLinks = async (req, res) => {
 
 const UpdateModuleLinks = async (req, res) => {
   try {
-    const { linkname, route, position } = req.body;
+    const { linkname, route, position, render, released } = req.body;
     const { moduleId, linkId } = req.params;
     const modules = new Modules(req.db);
     const modulelinks = new ModuleLinks(req.db);
@@ -449,6 +453,8 @@ const UpdateModuleLinks = async (req, res) => {
     modulelinks.ModuleId = moduleId;
     modulelinks.LinkName = linkname;
     modulelinks.Route = route;
+    modulelinks.Render = render;
+    modulelinks.released = released;
     modulelinks.Position = position;
     const response = await modulelinks.UpdateLink();
     if (response?.success === false) {
@@ -505,6 +511,16 @@ const GetLastModuleLinkPosition = async (req, res) => {
   }
 };
 
+const getSelectModules = async (req, res) => {
+  try {
+    const moduleobj = new Modules(req.db);
+    const data = await moduleobj.getSelectModules();
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 module.exports = {
   AddRoles,
   CreateTable,
@@ -525,4 +541,5 @@ module.exports = {
   DeleteModuleLinks,
   GetModuleLinks,
   GetLastModuleLinkPosition,
+  getSelectModules,
 };
