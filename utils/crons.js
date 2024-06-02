@@ -64,6 +64,7 @@ const HandleExpiredLinkRoles = async (io, database) => {
     const linkroles = new Linkroles(database);
     const linkpermissions = new Rolepermissions(database);
     const data = await linkroles.getExpiredRoles();
+    
     if (data.length > 0) {
       data.forEach(async (row) => {
         linkroles.Id = row.id;
