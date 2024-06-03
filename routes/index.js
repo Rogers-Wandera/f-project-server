@@ -20,6 +20,8 @@ const RolepermissionsRouter = require("./adminroutes/rolepermissionsroute.js");
 const RefreshtokensRouter = require("./auth/refreshtokensroute.js");
 const TrainerRouter = require("./recognition/trainerroute.js");
 const ModelevaluationRouter = require("./recognition/modelevaluationroute.js");
+const ClassifiersRouter = require("./recognition/classifiersroute.js");
+const PredictionsRouter = require("./recognition/predictionsroute.js")
 // end of routes imports
 
 const router = require("express").Router();
@@ -46,6 +48,8 @@ router.use(`/rolepermission`, RolepermissionsRouter);
 router.use(`/refreshtoken`, RefreshtokensRouter);
 router.use(`/recognition`, TrainerRouter);
 router.use(`/modeleval`, ModelevaluationRouter);
+router.use(`/classifier`, ClassifiersRouter);
+router.use(`/prediction`, PredictionsRouter);
 //end of routes
 
 module.exports = router;
