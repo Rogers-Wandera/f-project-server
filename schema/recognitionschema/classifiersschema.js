@@ -8,10 +8,14 @@ const classifiersSchema = joi.object({
     "string.max": "userId must be at most {#limit} characters",
     "string.min": "userId must be at least {#limit} characters",
   }),
-  type: joi.string().valid("url_image", "local_image").required().messages({
-    "any.required": "type is required",
-    "string.empty": "type cannot be empty",
-  }),
+  type: joi
+    .string()
+    .valid("url_image", "local_image", "blob")
+    .required()
+    .messages({
+      "any.required": "type is required",
+      "string.empty": "type cannot be empty",
+    }),
   image: imagesArray.optional().allow({}).messages({
     "any.required": "image is required",
   }),

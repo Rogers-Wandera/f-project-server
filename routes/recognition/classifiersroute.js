@@ -3,6 +3,7 @@ const {
   AddClassifiers,
   ViewClassifiers,
   ViewSingleClassifiers,
+  UpdateMatch,
 } = require("../../controllers/recognition/classifierscontroller.js");
 const {
   classifiersSchema,
@@ -31,4 +32,7 @@ router
     VerifyRoles(USER_ROLES.Admin),
     ViewSingleClassifiers
   );
+router
+  .route("/:personId/:id/:found")
+  .patch(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), UpdateMatch);
 module.exports = router;

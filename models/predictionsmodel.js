@@ -15,6 +15,7 @@ class Predictions extends Model {
     this.personId = null;
     this.ranking = null;
     this.modelType = null;
+    this.match = null;
     this.creationDate = null;
     this.createdBy = null;
     this.updatedBy = null;
@@ -45,6 +46,9 @@ class Predictions extends Model {
   }
   get ModelType() {
     return this.modelType;
+  }
+  get Match() {
+    return this.match;
   }
   get CreationDate() {
     return this.creationDate;
@@ -88,6 +92,9 @@ class Predictions extends Model {
   }
   set ModelType(modelType) {
     this.modelType = modelType;
+  }
+  set Match(match) {
+    this.match = match;
   }
   set CreationDate(creationDate) {
     this.creationDate = creationDate;
@@ -190,28 +197,48 @@ class Predictions extends Model {
       throw new Error(error);
     }
   }
-  //   update function
-  async UpdatePredictions() {
-    try {
-      const Classifier = new classifiers(this.db);
-      Classifier.Id = this.classifierId;
-      await Classifier.__find();
-      this.updatedDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-      const results = await this.__update();
-      return results;
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
-  //   delete function
-  async DeletePredictions() {
-    try {
-      this.deleted_at = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-      const results = await this.__delete();
 
-      return results;
+  async UpdateMatch(found) {
+    try {
+      const data = await this.db.executeQuery(
+        "SELECT *FROM vw_predictions WHERE classifierId = ? order BY confidence DESC",
+        [this.classifierId]
+      );
+      if (found == 1) {
+        const matches = data.filter((item) => item.personId == this.personId);
+        if (matches.length > 0) {
+          const response = matches.map(async (item) => {
+            const newpredictions = new Predictions(this.db);
+            newpredictions.id = item.id;
+            newpredictions.match = 1;
+            newpredictions.updatedBy = this.updatedBy;
+            newpredictions.updatedDate = format(
+              new Date(),
+              "yyyy-MM-dd HH:mm:ss"
+            );
+            return await newpredictions.__update();
+          });
+          await Promise.all(response);
+          return await this.HandleResponseData();
+        }
+      } else {
+        const response = data.map(async (item) => {
+          const newpredictions = new Predictions(this.db);
+          newpredictions.id = item.id;
+          newpredictions.match = 0;
+          newpredictions.updatedBy = this.updatedBy;
+          newpredictions.updatedDate = format(
+            new Date(),
+            "yyyy-MM-dd HH:mm:ss"
+          );
+          return await newpredictions.__update();
+        });
+        await Promise.all(response);
+        return await this.HandleResponseData();
+      }
+      return false;
     } catch (error) {
-      throw new Error(error);
+      throw error;
     }
   }
 }

@@ -14,9 +14,9 @@ const trainerSchema = joi.object({
   }),
   trainerOptions: joi
     .object({
-      version: joi.string().valid("v1", "v2").required().messages({
+      version: joi.string().valid("v1", "v2", "v3").required().messages({
         "any.required": "version is required",
-        "any.valid": "Version must be in v1 or v2",
+        "any.valid": "Version must be in v1 or v2 or v3",
         "string.empty": "Version cannot be empty",
       }),
       activation: joi.string().valid("relu", "sigmoid").required().messages({

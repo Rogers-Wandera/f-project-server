@@ -19,6 +19,7 @@ class Classifiers extends Model {
     this.deleted_at = null;
     this.deletedBy = null;
     this.isActive = null;
+    this.status = null;
     this.classifierType = null;
   }
 
@@ -161,7 +162,13 @@ class Classifiers extends Model {
         throw new Error("No User found");
       }
       classifierobj.token = token;
-      classifierobj.data = { type: this.type, image: image, url: url };
+      if (this.type == "url_image") {
+        classifierobj.data = { type: this.type, image: { url: url } };
+      } else if (this.type == "blob") {
+        classifierobj.data = { type: this.type, image: { blob: url } };
+      } else {
+        classifierobj.data = { type: this.type, image: image };
+      }
       const response = await classifierobj.PredictImage("/classifier/predict");
       this.creationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
       this.isActive = 1;
@@ -172,7 +179,6 @@ class Classifiers extends Model {
       }
       return results;
     } catch (error) {
-      console.log(error);
       throw error;
     }
   }
@@ -201,6 +207,28 @@ class Classifiers extends Model {
       return results;
     } catch (error) {
       throw new Error(error);
+    }
+  }
+
+  async UpdateFound(personId, found = 1) {
+    try {
+      const predictions = new Predictions(this.db);
+      predictions.updatedBy = this.updatedBy;
+      predictions.classifierId = this.id;
+      predictions.personId = personId;
+      const response = await predictions.UpdateMatch(found);
+      if (Array.isArray(response)) {
+        if (found == 1) {
+          this.status = "Match Found";
+        } else {
+          this.status = "No Match Found";
+        }
+        await this.__update();
+        return response;
+      }
+      return [];
+    } catch (error) {
+      throw error;
     }
   }
 }

@@ -44,8 +44,25 @@ const AddClassifiers = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+const UpdateMatch = async (req, res) => {
+  const classifiers = new Classifiers(req.db);
+  try {
+    const { found, id, personId } = req.params;
+    classifiers.Id = id;
+    classifiers.updatedBy = req.user.id;
+    const data = await classifiers.UpdateFound(personId, found);
+    if (data.length == 0) {
+      throw new Error("Match not found");
+    }
+    res.status(200).json({ msg: "Match updated", data: data });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 module.exports = {
   AddClassifiers,
   ViewClassifiers,
   ViewSingleClassifiers,
+  UpdateMatch,
 };
