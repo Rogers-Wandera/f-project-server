@@ -4,6 +4,8 @@ const {
   ViewClassifiers,
   ViewSingleClassifiers,
   UpdateMatch,
+  InitiateLiveRecognition,
+  StopLiveRecognition,
 } = require("../../controllers/recognition/classifierscontroller.js");
 const {
   classifiersSchema,
@@ -35,4 +37,22 @@ router
 router
   .route("/:personId/:id/:found")
   .patch(VerifyJwt, VerifyEmail, VerifyRoles(USER_ROLES.Admin), UpdateMatch);
+
+router
+  .route("/live/start")
+  .post(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin),
+    InitiateLiveRecognition
+  );
+
+router
+  .route("/live/stop")
+  .post(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin),
+    StopLiveRecognition
+  );
 module.exports = router;

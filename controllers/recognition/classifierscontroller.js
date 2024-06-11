@@ -60,9 +60,29 @@ const UpdateMatch = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+const InitiateLiveRecognition = async (req, res) => {
+  try {
+    const user = req.user;
+    res.status(200).json({ msg: "Live recognition has started", data: user });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const StopLiveRecognition = async (req, res) => {
+  try {
+    const user = req.user;
+    res.status(200).json({ msg: "Live recognition has ended", data: user });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 module.exports = {
   AddClassifiers,
   ViewClassifiers,
   ViewSingleClassifiers,
   UpdateMatch,
+  InitiateLiveRecognition,
+  StopLiveRecognition,
 };

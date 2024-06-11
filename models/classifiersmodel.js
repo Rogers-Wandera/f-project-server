@@ -231,5 +231,33 @@ class Classifiers extends Model {
       throw error;
     }
   }
+
+  async HandleLivePredicions(data) {
+    try {
+      const { token, userId, stream } = data;
+      classifierobj.token = token;
+      classifierobj.data = { userId, stream };
+      const response = await classifierobj.HandleRealTime(
+        "/classifier/realtime/start"
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async StopLivePredicions(data) {
+    try {
+      const { token, userId } = data;
+      classifierobj.token = token;
+      classifierobj.data = { userId };
+      const response = await classifierobj.HandleRealTime(
+        "/classifier/realtime/stop"
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 module.exports = Classifiers;
