@@ -89,7 +89,7 @@ io.on("connection", async (socket) => {
       socket.emit("stream_error", error.message);
     }
   });
-
+  
   socket.on("stopstream", async (data) => {
     try {
       const classifiers = new Classifiers(database);

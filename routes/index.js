@@ -1,4 +1,5 @@
 // start of routes imports
+const router = require("express").Router();
 const RegisterRoute = require("./auth/registerroute");
 const ResetPassword = require("./auth/resetpasswordroute");
 const AdminRoute = require("./adminroutes/adminroutes");
@@ -21,10 +22,9 @@ const RefreshtokensRouter = require("./auth/refreshtokensroute.js");
 const TrainerRouter = require("./recognition/trainerroute.js");
 const ModelevaluationRouter = require("./recognition/modelevaluationroute.js");
 const ClassifiersRouter = require("./recognition/classifiersroute.js");
-const PredictionsRouter = require("./recognition/predictionsroute.js")
+const PredictionsRouter = require("./recognition/predictionsroute.js");
+const AnalysisRouter = require("./adminroutes/analysisroute.js");
 // end of routes imports
-
-const router = require("express").Router();
 
 // routes
 router.use(`/register`, RegisterRoute);
@@ -50,6 +50,7 @@ router.use(`/recognition`, TrainerRouter);
 router.use(`/modeleval`, ModelevaluationRouter);
 router.use(`/classifier`, ClassifiersRouter);
 router.use(`/prediction`, PredictionsRouter);
+router.use(`/analysis`, AnalysisRouter);
 //end of routes
 
 module.exports = router;
