@@ -1,4 +1,8 @@
-const { countqueries, predictionsqueris } = require("../queries/queries");
+const {
+  countqueries,
+  predictionsqueris,
+  usersqueries,
+} = require("../queries/queries");
 const Model = require("./modal");
 
 const weeklyDays = ["Mon", "Tue", "Wed", "Thur", "Fri", "Sat", "Sun"];
@@ -12,7 +16,30 @@ class AnalysisModel extends Model {
       const data = {};
       for (const key in countqueries) {
         const countdata = await this.db.executeQuery(countqueries[key]);
-        data[key] = countdata[0].count;
+        if (countdata.length <= 0) {
+          data[key] = 0;
+        } else {
+          data[key] = countdata[0].count;
+        }
+      }
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async UserCounts() {
+    try {
+      const data = {};
+      for (const key in usersqueries["usercounts"]) {
+        const countdata = await this.db.executeQuery(
+          usersqueries["usercounts"][key]
+        );
+        if (countdata.length <= 0) {
+          data[key] = 0;
+        } else {
+          data[key] = countdata[0].count;
+        }
       }
       return data;
     } catch (error) {
@@ -34,11 +61,13 @@ class AnalysisModel extends Model {
       const daily = await this.DailyPredictions();
       const todaypreddata = await this.TodayPredictionData();
       const predictionscount = await this.PredictionsCount();
+      const usercounts = await this.UserCounts();
       data["monthly"] = monthly;
       data["weekly"] = formmated;
       data["daily"] = daily;
       data["todaydata"] = todaypreddata;
       data["predictioncount"] = predictionscount;
+      data["usercounts"] = usercounts;
       return data;
     } catch (error) {
       throw error;

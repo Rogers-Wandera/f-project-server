@@ -24,7 +24,6 @@ const MainRouter = require("./routes");
 const path = require("path");
 const { HandleOnline } = require("./sockets/online");
 const Classifiers = require("./models/classifiersmodel");
-const { createWriteStream, existsSync, mkdirSync, writeFile } = require("fs");
 
 app.use(logger);
 app.use(credentials);
@@ -89,7 +88,7 @@ io.on("connection", async (socket) => {
       socket.emit("stream_error", error.message);
     }
   });
-  
+
   socket.on("stopstream", async (data) => {
     try {
       const classifiers = new Classifiers(database);

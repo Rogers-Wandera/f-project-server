@@ -6,6 +6,7 @@ const {
   UpdateMatch,
   InitiateLiveRecognition,
   StopLiveRecognition,
+  HandleAudioClassifiers,
 } = require("../../controllers/recognition/classifierscontroller.js");
 const {
   classifiersSchema,
@@ -54,5 +55,14 @@ router
     VerifyEmail,
     VerifyRoles(USER_ROLES.Admin),
     StopLiveRecognition
+  );
+
+router
+  .route("/audio")
+  .post(
+    VerifyJwt,
+    VerifyEmail,
+    VerifyRoles(USER_ROLES.Admin),
+    HandleAudioClassifiers
   );
 module.exports = router;

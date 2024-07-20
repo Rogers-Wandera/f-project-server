@@ -1,4 +1,8 @@
 const Classifiers = require("../../models/classifiersmodel");
+const {
+  GetFileFromLocal,
+} = require("../personcontrollers/personaudios/personaudioscontroller");
+
 const ViewClassifiers = async (req, res) => {
   try {
     const { start, size, filters, globalFilter, sorting } = req.query;
@@ -78,6 +82,34 @@ const StopLiveRecognition = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+const HandleAudioClassifiers = async (req, res) => {
+  try {
+    let audio = {};
+
+    const { type } = req.query;
+    if (type === "url") {
+      audio = { path: req.body.url };
+    } else {
+      audio = await GetFileFromLocal(req, res);
+    }
+    const classifiersmodel = new Classifiers(req.db);
+    classifiersmodel.UserId = req.user.id;
+    classifiersmodel.Type = "local_audio";
+    classifiersmodel.classifierType = "Audio";
+    classifiersmodel.createdBy = req.user.id;
+    const data = { token: req.token, path: audio.path };
+    const response = await classifiersmodel.HandlePredictAdudio(data);
+    if (!Array.isArray(response)) {
+      throw new Error("Failed to classify image");
+    }
+    res
+      .status(200)
+      .json({ msg: "Classifiers added successfully", data: response });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 module.exports = {
   AddClassifiers,
   ViewClassifiers,
@@ -85,4 +117,5 @@ module.exports = {
   UpdateMatch,
   InitiateLiveRecognition,
   StopLiveRecognition,
+  HandleAudioClassifiers,
 };

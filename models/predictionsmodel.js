@@ -141,9 +141,11 @@ class Predictions extends Model {
       const personsmeta = new Model(this.db);
       const person = new Model(this.db);
       const personimages = new Model(this.db);
+      const personaudios = new Model(this.db);
       person.table = "person";
       personsmeta.table = "personmeta";
       personimages.table = "imagedata";
+      personaudios.table = "personaudio";
       const data = await this.db.executeQuery(
         "SELECT *FROM vw_predictions WHERE classifierId = ? order BY confidence DESC",
         [this.classifierId]
@@ -162,9 +164,14 @@ class Predictions extends Model {
               personId: item.personId,
               isActive: 1,
             });
+            const audios = await personaudios.Find({
+              personId: item.personId,
+              isActive: 1,
+            });
             item.Person = personData[0];
             item.PersonMeta = meta;
             item.PersonImages = images;
+            item.PersonAudios = audios;
             return item;
           })
         );

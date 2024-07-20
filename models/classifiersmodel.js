@@ -182,6 +182,61 @@ class Classifiers extends Model {
       throw error;
     }
   }
+
+  async HandlePredictAdudio(data) {
+    try {
+      const predictions = new Predictions(this.db);
+      if (!data.path) throw new Error("Path is required");
+      classifierobj.token = data.token;
+      classifierobj.data = { audio: { path: data.path } };
+      const response = await classifierobj.PredictImage("/audio/predict");
+      this.creationDate = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+      this.isActive = 1;
+      const results = await this.__add();
+      if (results.insertId > 0) {
+        const predictionsdata = this.HandleAudioPredictions(
+          response,
+          results.insertId
+        );
+        return await predictions.AddPredictions(
+          predictionsdata,
+          this.createdBy
+        );
+      }
+      return results;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  HandleAudioPredictions(response, insertId) {
+    const predicted = response.data.predict;
+    const others = response.data.others;
+    const predictiondata = [];
+    if (predicted) {
+      predictiondata.push({
+        confidence: predicted.confidence,
+        personId: predicted.id,
+        ranking: 1,
+        personName: predicted.label,
+        classifierId: insertId,
+        modelType: "Audio Model",
+      });
+    }
+    if (others) {
+      others.forEach((pr, index) => {
+        predictiondata.push({
+          confidence: pr.confidence,
+          personId: pr.id,
+          ranking: index + 2,
+          personName: pr.label,
+          classifierId: insertId,
+          modelType: "Audio Model",
+        });
+      });
+    }
+    return predictiondata;
+  }
   //   update function
   async UpdateClassifiers() {
     try {

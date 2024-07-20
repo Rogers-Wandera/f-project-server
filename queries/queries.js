@@ -60,7 +60,15 @@ GROUP BY pre.personId;`,
   },
 };
 
+const usersqueries = {
+  usercounts: {
+    "Online Users": "SELECT COUNT(*) AS count FROM users WHERE online = 1;",
+    "Offline Users": "SELECT COUNT(*) AS count FROM users WHERE online = 0;",
+  },
+};
+
 module.exports = {
   countqueries,
   predictionsqueris,
+  usersqueries,
 };
