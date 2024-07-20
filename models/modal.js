@@ -199,6 +199,18 @@ class Model {
       throw new Error("method-> __viewCustomQueryPaginate: " + error.message);
     }
   }
+
+  async Find(conditions = {}) {
+    try {
+      if (!this.table) {
+        throw new Error("Table name is required");
+      }
+      const data = await this.db.findByConditions(this.table, conditions);
+      return data;
+    } catch (error) {
+      throw new Error("method-> Find: " + error.message);
+    }
+  }
 }
 
 module.exports = Model;

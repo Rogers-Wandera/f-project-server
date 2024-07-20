@@ -44,10 +44,14 @@ const Register = async (req, res) => {
     if (!result?.success) {
       return res.status(500).json({ msg: "Something went wrong try again" });
     }
+    let createdBy = userid;
+    if (req.user) {
+      createdBy = req.user.id;
+    }
     const roles = {
       userId: userid,
       isActive: 1,
-      createdBy: req.user.id || "",
+      createdBy: createdBy,
     };
     let additionaldata = "";
     if (adminCreated == 1) {

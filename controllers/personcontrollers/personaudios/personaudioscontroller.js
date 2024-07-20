@@ -7,6 +7,7 @@ const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
 const ffmpeg = require("fluent-ffmpeg");
 ffmpeg.setFfmpegPath(ffmpegPath);
 const fspath = require("path");
+const { v4: uuidv4 } = require("uuid");
 
 const imageotions = {
   use_filename: true,
@@ -344,6 +345,38 @@ const UploadAudioFromLocal = async (req, res) => {
   }
 };
 
+const GetFileFromLocal = async (req, res) => {
+  try {
+    const audioToUpload = await uploader.handleFileUpload(req, res);
+    if (!audioToUpload?.audio) {
+      return res
+        .status(400)
+        .json({ error: "No audio uploaded please select an audio file" });
+    }
+    const audiofiles = audioToUpload.audio;
+    const { path } = audiofiles[0];
+    let pathfile = path;
+    const convertpath = fspath.join(__dirname, "..", "..", "..", "converted");
+    // check if file is wav
+    const iswav = uploader.checkWavFormat(path);
+    if (!iswav) {
+      if (!fs.existsSync(convertpath)) {
+        fs.mkdirSync(convertpath);
+      }
+      const newaudiopath = fspath.join(convertpath, `${uuidv4()}.wav`);
+      await convertToWav(path, newaudiopath);
+      pathfile = newaudiopath;
+    }
+    const audio = {
+      path: pathfile,
+      defaultEncoding: audioToUpload.audio[0].encoding,
+    };
+    return audio;
+  } catch (error) {
+    throw error;
+  }
+};
+
 const UploadMultipleAudioFromLocal = async (req, res) => {
   try {
     const { personId } = req.query;
@@ -472,4 +505,5 @@ module.exports = {
   UploadMultiple,
   UploadMultipleAudioFromLocal,
   DeletePersonAudio,
+  GetFileFromLocal,
 };
