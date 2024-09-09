@@ -11,7 +11,7 @@ const sendVerification = async (email, name, link, additionalhtml = "") => {
     const emailData = {
       recipientName: name,
       serverData: "Please confirm registration",
-      senderName: "C-CHAT",
+      senderName: "R-TECH",
       link: link,
       moredata: [...additionalhtml],
     };
